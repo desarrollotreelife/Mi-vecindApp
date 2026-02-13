@@ -1,0 +1,80 @@
+{
+    "version": "1.6.0",
+    "versionName": "Configuration Module",
+    "buildNumber": "20260123_2",
+    "changelog": {
+        "1.6.0": {
+            "date": "2026-01-23",
+            "type": "minor",
+            "changes": [
+                "Módulo de Configuración de Usuarios del Sistema",
+                "Gestión de Administradores y Guardias de Seguridad",
+                "Sistema de Auditoría de acciones (Logs)",
+                "Control de roles, cargos y turnos",
+                "Actualización de esquema de base de datos"
+            ]
+        },
+        "1.5.0": {
+            "date": "2026-01-23",
+            "type": "minor",
+            "changes": [
+                "Sistema de backup automático con rotación de 31 días",
+                "Organización de archivos por módulos (RESIDENTES, VISITANTES, etc.)",
+                "Almacenamiento local de fotos en carpetas separadas",
+                "Programador de tareas diarias (cron) a las 2:00 AM",
+                "Documentación completa del sistema de backup"
+            ]
+        },
+        "1.4.0": {
+            "date": "2026-01-22",
+            "type": "minor",
+            "changes": [
+                "Módulo de Tienda (Store) implementado",
+                "Sistema POS (Punto de Venta)",
+                "Gestión de inventario de productos",
+                "Control de stock y ventas"
+            ]
+        },
+        "1.3.0": {
+            "date": "2026-01-22",
+            "type": "minor",
+            "changes": [
+                "Módulo de Amenidades completado",
+                "Sistema de reservas de instalaciones",
+                "Gestión de disponibilidad y horarios",
+                "Formulario de reservas con validación"
+            ]
+        },
+        "1.2.0": {
+            "date": "2026-01-22",
+            "type": "minor",
+            "changes": [
+                "Módulo de Parqueaderos implementado",
+                "Registro de vehículos con fotos",
+                "Control de cupos de estacionamiento",
+                "Listado y búsqueda de vehículos"
+            ]
+        },
+        "1.1.0": {
+            "date": "2026-01-22",
+            "type": "minor",
+            "changes": [
+                "Módulo de Visitantes completado",
+                "Captura de fotos con webcam",
+                "Registro de visitas programadas",
+                "Campo de cédula agregado"
+            ]
+        },
+        "1.0.0": {
+            "date": "2026-01-22",
+            "type": "major",
+            "changes": [
+                "Módulo de Residentes implementado",
+                "Sistema de autenticación básico",
+                "Migración a SQLite para desarrollo local",
+                "Dashboard administrativo con Tailwind CSS",
+                "Estructura base del proyecto"
+            ]
+        }
+    }
+}
