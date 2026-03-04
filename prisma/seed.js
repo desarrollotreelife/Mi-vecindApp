@@ -64,9 +64,10 @@ async function main() {
         update: { complex_id: complexId },
         create: {
             email: 'admin@simids.com',
-            password_hash: '$2b$10$EpRnTzVlqHNP0.fKb.U/..t.Chq.GT/Oe', // "password"
+            password_hash: '$2b$10$EpRnTzVlqHNP0.fKb.U/..t.Chq.GT/Oe', // 123456
             full_name: 'Administrador Principal',
-            role_id: 1,
+            document_num: 'admin',
+            role_id: 1, // admin
             complex_id: complexId
         },
     });
