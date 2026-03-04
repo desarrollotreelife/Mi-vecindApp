@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { listComplexes, createComplex, toggleComplexStatus } from './complex.controller';
+import { listComplexes, createComplex, toggleComplexStatus, updateComplex } from './complex.controller';
 import { authenticate, authorize } from '../../core/auth.middleware';
 
 const router = Router();
@@ -10,6 +10,7 @@ router.use(authorize(['super_admin']));
 
 router.get('/', listComplexes);
 router.post('/', createComplex);
+router.put('/:id', updateComplex);
 router.patch('/:id/toggle', toggleComplexStatus);
 
 export default router;

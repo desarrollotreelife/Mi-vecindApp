@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Building2, Plus, Power, Search, Shield, Settings } from 'lucide-react';
+import { Building2, Plus, Power, Search, Shield, Settings, Edit } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import api from '../services/api';
 import toast from 'react-hot-toast';
@@ -25,6 +25,41 @@ export const SuperAdminPage: React.FC = () => {
 
     // Module Config Modal
     const [isModuleOpen, setIsModuleOpen] = useState(false);
+
+    // Edit Complex Modal
+    const [isEditOpen, setIsEditOpen] = useState(false);
+    const [editComplex, setEditComplex] = useState({
+        id: 0, name: '', nit: '', address: '', city: '',
+        admin_document_num: '', admin_email: '', admin_password: ''
+    });
+
+    const openEditModal = (complex: any) => {
+        const adminUser = complex.users && complex.users.length > 0 ? complex.users[0] : null;
+
+        setEditComplex({
+            id: complex.id,
+            name: complex.name,
+            nit: complex.nit || '',
+            address: complex.address || '',
+            city: complex.city || '',
+            admin_document_num: adminUser ? adminUser.document_num : '',
+            admin_email: adminUser ? adminUser.email : '',
+            admin_password: '' // leave blank unless changing
+        });
+        setIsEditOpen(true);
+    };
+
+    const handleEditSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        try {
+            await api.put(`/super-admin/complexes/${editComplex.id}`, editComplex);
+            setIsEditOpen(false);
+            fetchComplexes();
+            toast.success('Conjunto y administrador actualizados');
+        } catch (error: any) {
+            toast.error(error.response?.data?.error || 'Error al actualizar');
+        }
+    };
 
     const fetchComplexes = async () => {
         try {
@@ -207,6 +242,13 @@ export const SuperAdminPage: React.FC = () => {
                                         <td className="px-6 py-4 text-right">
                                             <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                                 <button
+                                                    onClick={() => openEditModal(complex)}
+                                                    className="p-2 rounded-lg hover:bg-orange-50 text-slate-400 hover:text-orange-600 transition-colors"
+                                                    title="Editar Conjunto y Accesos"
+                                                >
+                                                    <Edit size={18} />
+                                                </button>
+                                                <button
                                                     onClick={() => openModuleModal(complex)}
                                                     className="p-2 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-primary-600 transition-colors"
                                                     title="Configurar Módulos"
@@ -359,6 +401,38 @@ export const SuperAdminPage: React.FC = () => {
                             <div className="flex justify-end gap-2 mt-4">
                                 <Button variant="ghost" type="button" onClick={() => setIsPasscodeOpen(false)}>Cancelar</Button>
                                 <Button type="submit">Actualizar Código</Button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* Edit Complex Modal */}
+            {isEditOpen && (
+                <div className="fixed inset-0 bg-slate-900/20 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                    <div className="bg-white rounded-2xl p-6 w-full max-w-lg shadow-2xl max-h-[90vh] overflow-y-auto">
+                        <h2 className="text-lg font-bold text-slate-900 mb-4">Editar Cliente</h2>
+                        <form onSubmit={handleEditSubmit} className="space-y-4">
+                            <input className="w-full border p-2 rounded" placeholder="Nombre" value={editComplex.name} onChange={e => setEditComplex({ ...editComplex, name: e.target.value })} required />
+                            <input className="w-full border p-2 rounded" placeholder="NIT" value={editComplex.nit} onChange={e => setEditComplex({ ...editComplex, nit: e.target.value })} />
+                            <input className="w-full border p-2 rounded" placeholder="Dirección" value={editComplex.address} onChange={e => setEditComplex({ ...editComplex, address: e.target.value })} />
+                            <input className="w-full border p-2 rounded" placeholder="Ciudad" value={editComplex.city} onChange={e => setEditComplex({ ...editComplex, city: e.target.value })} />
+                            <section className="bg-orange-50/50 p-3 rounded space-y-2 border border-orange-100">
+                                <h3 className="text-xs font-bold uppercase text-orange-600">Credenciales del Administrador</h3>
+                                <p className="text-xs text-slate-500 mb-2">Deja la contraseña en blanco si no deseas cambiarla.</p>
+
+                                <label className="block text-xs font-bold text-slate-500 mt-2">Cédula del Admin</label>
+                                <input className="w-full border p-2 rounded" type="text" placeholder="No. Documento (Cédula)" value={editComplex.admin_document_num} onChange={e => setEditComplex({ ...editComplex, admin_document_num: e.target.value })} />
+
+                                <label className="block text-xs font-bold text-slate-500 mt-2">Email del Admin</label>
+                                <input className="w-full border p-2 rounded" type="email" placeholder="Email Admin" value={editComplex.admin_email} onChange={e => setEditComplex({ ...editComplex, admin_email: e.target.value })} />
+
+                                <label className="block text-xs font-bold text-slate-500 mt-2">Corregir Contraseña</label>
+                                <input className="w-full border p-2 rounded placeholder:text-slate-300" type="password" placeholder="Escribe nueva contraseña (Opcional)" value={editComplex.admin_password} onChange={e => setEditComplex({ ...editComplex, admin_password: e.target.value })} />
+                            </section>
+                            <div className="flex justify-end gap-2 mt-4">
+                                <Button variant="ghost" type="button" onClick={() => setIsEditOpen(false)}>Cancelar</Button>
+                                <Button type="submit">Guardar Cambios</Button>
                             </div>
                         </form>
                     </div>
