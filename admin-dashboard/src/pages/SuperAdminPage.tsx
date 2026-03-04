@@ -14,7 +14,7 @@ export const SuperAdminPage: React.FC = () => {
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [newComplex, setNewComplex] = useState({
         name: '', nit: '', address: '', city: '',
-        admin_email: '', admin_password: '', plan_type: 'standard',
+        admin_document_num: '', admin_email: '', admin_password: '', plan_type: 'standard',
         deletion_passcode: ''
     });
 
@@ -76,7 +76,7 @@ export const SuperAdminPage: React.FC = () => {
         try {
             await api.post('/super-admin/complexes', newComplex);
             setIsFormOpen(false);
-            setNewComplex({ name: '', nit: '', address: '', city: '', admin_email: '', admin_password: '', plan_type: 'standard', deletion_passcode: '' } as any);
+            setNewComplex({ name: '', nit: '', address: '', city: '', admin_document_num: '', admin_email: '', admin_password: '', plan_type: 'standard', deletion_passcode: '' } as any);
             fetchComplexes();
             toast.success('Conjunto creado exitosamente');
         } catch (error: any) {
@@ -278,6 +278,7 @@ export const SuperAdminPage: React.FC = () => {
                             <input className="w-full border p-2 rounded" placeholder="Ciudad" value={newComplex.city} onChange={e => setNewComplex({ ...newComplex, city: e.target.value })} />
                             <section className="bg-slate-50 p-3 rounded space-y-2">
                                 <h3 className="text-xs font-bold uppercase text-slate-500">Administrador Inicial</h3>
+                                <input className="w-full border p-2 rounded" type="text" placeholder="No. Documento (Cédula)" value={newComplex.admin_document_num} onChange={e => setNewComplex({ ...newComplex, admin_document_num: e.target.value })} required />
                                 <input className="w-full border p-2 rounded" type="email" placeholder="Email Admin" value={newComplex.admin_email} onChange={e => setNewComplex({ ...newComplex, admin_email: e.target.value })} required />
                                 <input className="w-full border p-2 rounded" type="password" placeholder="Contraseña" value={newComplex.admin_password} onChange={e => setNewComplex({ ...newComplex, admin_password: e.target.value })} required />
                             </section>

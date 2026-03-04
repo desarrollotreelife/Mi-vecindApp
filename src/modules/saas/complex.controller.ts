@@ -24,7 +24,7 @@ export const listComplexes = async (req: Request, res: Response) => {
 
 export const createComplex = async (req: Request, res: Response) => {
     try {
-        const { name, nit, address, city, admin_email, admin_password } = req.body;
+        const { name, nit, address, city, admin_document_num, admin_email, admin_password } = req.body;
 
         // Transaction: Create Complex -> Create Admin User -> Link
         const result = await prisma.$transaction(async (tx) => {
@@ -34,15 +34,18 @@ export const createComplex = async (req: Request, res: Response) => {
             });
 
             // 2. Create Admin User
-            if (admin_email && admin_password) {
+            if (admin_document_num && admin_email && admin_password) {
+                const adminRole = await tx.role.findUnique({ where: { name: 'admin' } });
+                const roleId = adminRole ? adminRole.id : 1; // Fallback to 1 if not found
+
                 const hashedPassword = await bcrypt.hash(admin_password, 10);
                 await tx.user.create({
                     data: {
                         email: admin_email,
-                        document_num: admin_email, // fallback
+                        document_num: admin_document_num,
                         password_hash: hashedPassword,
                         full_name: `Admin ${name}`,
-                        role_id: 2, // admin
+                        role_id: roleId,
                         complex_id: complex.id,
                         status: 'active'
                     }

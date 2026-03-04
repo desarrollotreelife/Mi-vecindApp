@@ -76,11 +76,11 @@ export const LoginPage = () => {
                         <div className="w-16 h-16 bg-primary-100/50 rounded-2xl flex items-center justify-center mx-auto mb-4 text-primary-600">
                             <ShieldCheck size={32} />
                         </div>
-                        <h1 className="text-2xl font-bold text-slate-800">
-                            {is2FARequired ? 'Verificación de Seguridad' : 'Bienvenido de Nuevo'}
+                        <h1 className="text-3xl font-bold text-slate-900 tracking-tight">
+                            {is2FARequired ? 'Verificación de Seguridad' : 'Mi VecindApp'}
                         </h1>
-                        <p className="text-slate-500 mt-2">
-                            {is2FARequired ? 'Ingrese el código de 6 dígitos enviado.' : 'Mi VecindApp'}
+                        <p className="text-slate-500 mt-2 text-lg">
+                            {is2FARequired ? 'Ingrese el código de 6 dígitos enviado.' : 'Bienvenido de nuevo'}
                         </p>
                     </div>
 
