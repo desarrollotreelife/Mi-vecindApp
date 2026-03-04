@@ -26,6 +26,9 @@ export const SuperAdminPage: React.FC = () => {
     // Module Config Modal
     const [isModuleOpen, setIsModuleOpen] = useState(false);
 
+    // Loading State for Forms
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
     // Edit Complex Modal
     const [isEditOpen, setIsEditOpen] = useState(false);
     const [editComplex, setEditComplex] = useState({
@@ -51,13 +54,16 @@ export const SuperAdminPage: React.FC = () => {
 
     const handleEditSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        setIsSubmitting(true);
         try {
             await api.put(`/super-admin/complexes/${editComplex.id}`, editComplex);
             setIsEditOpen(false);
             fetchComplexes();
-            toast.success('Conjunto y administrador actualizados');
+            toast.success('Cambios guardados correctamente');
         } catch (error: any) {
             toast.error(error.response?.data?.error || 'Error al actualizar');
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
@@ -108,6 +114,7 @@ export const SuperAdminPage: React.FC = () => {
 
     const handleCreate = async (e: React.FormEvent) => {
         e.preventDefault();
+        setIsSubmitting(true);
         try {
             await api.post('/super-admin/complexes', newComplex);
             setIsFormOpen(false);
@@ -116,6 +123,8 @@ export const SuperAdminPage: React.FC = () => {
             toast.success('Conjunto creado exitosamente');
         } catch (error: any) {
             toast.error(error.response?.data?.error || 'Error al crear');
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
@@ -329,8 +338,17 @@ export const SuperAdminPage: React.FC = () => {
                                 <input className="w-full border p-2 rounded" placeholder="Ej: 9988" value={newComplex.deletion_passcode} onChange={e => setNewComplex({ ...newComplex, deletion_passcode: e.target.value })} />
                             </div>
                             <div className="flex justify-end gap-2 mt-4">
-                                <Button variant="ghost" type="button" onClick={() => setIsFormOpen(false)}>Cancelar</Button>
-                                <Button type="submit">Crear</Button>
+                                <Button variant="ghost" type="button" onClick={() => setIsFormOpen(false)} disabled={isSubmitting}>Cancelar</Button>
+                                <Button type="submit" disabled={isSubmitting}>
+                                    {isSubmitting ? (
+                                        <span className="flex items-center gap-2">
+                                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                            Guardando...
+                                        </span>
+                                    ) : (
+                                        'Crear Cliente'
+                                    )}
+                                </Button>
                             </div>
                         </form>
                     </div>
@@ -431,8 +449,17 @@ export const SuperAdminPage: React.FC = () => {
                                 <input className="w-full border p-2 rounded placeholder:text-slate-300" type="password" placeholder="Escribe nueva contraseña (Opcional)" value={editComplex.admin_password} onChange={e => setEditComplex({ ...editComplex, admin_password: e.target.value })} />
                             </section>
                             <div className="flex justify-end gap-2 mt-4">
-                                <Button variant="ghost" type="button" onClick={() => setIsEditOpen(false)}>Cancelar</Button>
-                                <Button type="submit">Guardar Cambios</Button>
+                                <Button variant="ghost" type="button" onClick={() => setIsEditOpen(false)} disabled={isSubmitting}>Cancelar</Button>
+                                <Button type="submit" disabled={isSubmitting} className="bg-emerald-600 hover:bg-emerald-700">
+                                    {isSubmitting ? (
+                                        <span className="flex items-center gap-2">
+                                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                            Guardando...
+                                        </span>
+                                    ) : (
+                                        'Guardar Cambios'
+                                    )}
+                                </Button>
                             </div>
                         </form>
                     </div>
