@@ -198,116 +198,118 @@ export const SuperAdminPage: React.FC = () => {
             </div>
 
             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-                <table className="w-full text-left">
-                    <thead>
-                        <tr className="border-b border-slate-100 bg-slate-50/50 text-xs uppercase font-semibold text-slate-500 tracking-wider">
-                            <th className="px-6 py-4">Cliente / Conjunto</th>
-                            <th className="px-6 py-4">Suscripción</th>
-                            <th className="px-6 py-4">Próximo Cobro</th>
-                            <th className="px-6 py-4">Estado Servicio</th>
-                            <th className="px-6 py-4 text-right">Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100">
-                        {filteredComplexes.length > 0 ? (
-                            filteredComplexes.map(complex => {
-                                const isPastDue = complex.billing_due_date && new Date(complex.billing_due_date) < new Date();
-                                return (
-                                    <tr key={complex.id} className="group hover:bg-slate-50 transition-colors">
-                                        <td className="px-6 py-4">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center text-slate-500 group-hover:bg-white group-hover:shadow-sm transition-all border border-transparent group-hover:border-slate-200">
-                                                    <Building2 size={20} />
-                                                </div>
-                                                <div>
-                                                    <div className="font-semibold text-slate-900">{complex.name}</div>
-                                                    <div className="text-xs text-slate-500 font-mono mt-0.5">{complex.nit || 'NIT Pendiente'}</div>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <div className="text-sm font-medium text-slate-700 capitalize">{complex.plan_type || 'Standard'}</div>
-                                            <div className={`text-xs mt-0.5 ${complex.subscription_status === 'active' ? 'text-emerald-600' : 'text-red-500'}`}>
-                                                {complex.subscription_status === 'active' ? 'Al día' : 'Mora / Pendiente'}
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <div className={`text-sm font-mono ${isPastDue ? 'text-red-600 font-bold' : 'text-slate-600'}`}>
-                                                {complex.billing_due_date ? new Date(complex.billing_due_date).toLocaleDateString() : '-'}
-                                            </div>
-                                            {isPastDue && (
-                                                <span className="text-[10px] bg-red-100 text-red-700 px-1.5 py-0.5 rounded uppercase font-bold tracking-wide">Vencido</span>
-                                            )}
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold border ${complex.is_active
-                                                ? 'bg-emerald-50 text-emerald-700 border-emerald-100'
-                                                : 'bg-slate-50 text-slate-600 border-slate-200'
-                                                }`}>
-                                                <span className={`w-1.5 h-1.5 rounded-full ${complex.is_active ? 'bg-emerald-500' : 'bg-slate-400'}`}></span>
-                                                {complex.is_active ? 'Activo' : 'Suspendido'}
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4 text-right">
-                                            <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                <button
-                                                    onClick={() => openEditModal(complex)}
-                                                    className="p-2 rounded-lg hover:bg-orange-50 text-slate-400 hover:text-orange-600 transition-colors"
-                                                    title="Editar Conjunto y Accesos"
-                                                >
-                                                    <Edit size={18} />
-                                                </button>
-                                                <button
-                                                    onClick={() => openModuleModal(complex)}
-                                                    className="p-2 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-primary-600 transition-colors"
-                                                    title="Configurar Módulos"
-                                                >
-                                                    <Settings size={18} />
-                                                </button>
-                                                <button
-                                                    onClick={() => openPaymentModal(complex)}
-                                                    className="p-2 rounded-lg hover:bg-blue-50 text-slate-400 hover:text-blue-600 transition-colors"
-                                                    title="Registrar Pago"
-                                                >
-                                                    <span className="font-bold text-xs">$</span>
-                                                </button>
-                                                <button
-                                                    onClick={() => openPasscodeModal(complex)}
-                                                    className="p-2 rounded-lg hover:bg-indigo-50 text-slate-400 hover:text-indigo-600 transition-colors"
-                                                    title="Configurar Código de Seguridad"
-                                                >
-                                                    <Shield size={18} />
-                                                </button>
-                                                <button
-                                                    onClick={() => toggleStatus(complex.id, complex.is_active, complex.name)}
-                                                    className={`p-2 rounded-lg transition-all ${complex.is_active
-                                                        ? 'hover:bg-red-50 text-slate-400 hover:text-red-600'
-                                                        : 'hover:bg-emerald-50 text-slate-400 hover:text-emerald-600'
-                                                        }`}
-                                                    title={complex.is_active ? 'Suspender Servicio (Kill Switch)' : 'Reactivar Servicio'}
-                                                >
-                                                    <Power size={18} />
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                );
-                            })
-                        ) : (
-                            <tr>
-                                <td colSpan={5} className="px-6 py-12 text-center text-slate-400">
-                                    <div className="flex flex-col items-center gap-2">
-                                        <Building2 size={48} className="opacity-20" />
-                                        <p>No se encontraron clientes registrados.</p>
-                                        <Button variant="ghost" size="sm" onClick={fetchComplexes} className="mt-2">
-                                            Reintentar cargar
-                                        </Button>
-                                    </div>
-                                </td>
+                <div className="overflow-x-auto block w-full">
+                    <table className="w-full text-left min-w-[900px]">
+                        <thead>
+                            <tr className="border-b border-slate-100 bg-slate-50/50 text-xs uppercase font-semibold text-slate-500 tracking-wider">
+                                <th className="px-6 py-4">Cliente / Conjunto</th>
+                                <th className="px-6 py-4">Suscripción</th>
+                                <th className="px-6 py-4">Próximo Cobro</th>
+                                <th className="px-6 py-4">Estado Servicio</th>
+                                <th className="px-6 py-4 text-right">Acciones</th>
                             </tr>
-                        )}
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                            {filteredComplexes.length > 0 ? (
+                                filteredComplexes.map(complex => {
+                                    const isPastDue = complex.billing_due_date && new Date(complex.billing_due_date) < new Date();
+                                    return (
+                                        <tr key={complex.id} className="group hover:bg-slate-50 transition-colors">
+                                            <td className="px-6 py-4">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center text-slate-500 group-hover:bg-white group-hover:shadow-sm transition-all border border-transparent group-hover:border-slate-200">
+                                                        <Building2 size={20} />
+                                                    </div>
+                                                    <div>
+                                                        <div className="font-semibold text-slate-900">{complex.name}</div>
+                                                        <div className="text-xs text-slate-500 font-mono mt-0.5">{complex.nit || 'NIT Pendiente'}</div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                <div className="text-sm font-medium text-slate-700 capitalize">{complex.plan_type || 'Standard'}</div>
+                                                <div className={`text-xs mt-0.5 ${complex.subscription_status === 'active' ? 'text-emerald-600' : 'text-red-500'}`}>
+                                                    {complex.subscription_status === 'active' ? 'Al día' : 'Mora / Pendiente'}
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                <div className={`text-sm font-mono ${isPastDue ? 'text-red-600 font-bold' : 'text-slate-600'}`}>
+                                                    {complex.billing_due_date ? new Date(complex.billing_due_date).toLocaleDateString() : '-'}
+                                                </div>
+                                                {isPastDue && (
+                                                    <span className="text-[10px] bg-red-100 text-red-700 px-1.5 py-0.5 rounded uppercase font-bold tracking-wide">Vencido</span>
+                                                )}
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold border ${complex.is_active
+                                                    ? 'bg-emerald-50 text-emerald-700 border-emerald-100'
+                                                    : 'bg-slate-50 text-slate-600 border-slate-200'
+                                                    }`}>
+                                                    <span className={`w-1.5 h-1.5 rounded-full ${complex.is_active ? 'bg-emerald-500' : 'bg-slate-400'}`}></span>
+                                                    {complex.is_active ? 'Activo' : 'Suspendido'}
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-4 text-right">
+                                                <div className="flex justify-end gap-2 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
+                                                    <button
+                                                        onClick={() => openEditModal(complex)}
+                                                        className="p-2 rounded-lg hover:bg-orange-50 text-slate-400 hover:text-orange-600 transition-colors"
+                                                        title="Editar Conjunto y Accesos"
+                                                    >
+                                                        <Edit size={18} />
+                                                    </button>
+                                                    <button
+                                                        onClick={() => openModuleModal(complex)}
+                                                        className="p-2 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-primary-600 transition-colors"
+                                                        title="Configurar Módulos"
+                                                    >
+                                                        <Settings size={18} />
+                                                    </button>
+                                                    <button
+                                                        onClick={() => openPaymentModal(complex)}
+                                                        className="p-2 rounded-lg hover:bg-blue-50 text-slate-400 hover:text-blue-600 transition-colors"
+                                                        title="Registrar Pago"
+                                                    >
+                                                        <span className="font-bold text-xs">$</span>
+                                                    </button>
+                                                    <button
+                                                        onClick={() => openPasscodeModal(complex)}
+                                                        className="p-2 rounded-lg hover:bg-indigo-50 text-slate-400 hover:text-indigo-600 transition-colors"
+                                                        title="Configurar Código de Seguridad"
+                                                    >
+                                                        <Shield size={18} />
+                                                    </button>
+                                                    <button
+                                                        onClick={() => toggleStatus(complex.id, complex.is_active, complex.name)}
+                                                        className={`p-2 rounded-lg transition-all ${complex.is_active
+                                                            ? 'hover:bg-red-50 text-slate-400 hover:text-red-600'
+                                                            : 'hover:bg-emerald-50 text-slate-400 hover:text-emerald-600'
+                                                            }`}
+                                                        title={complex.is_active ? 'Suspender Servicio (Kill Switch)' : 'Reactivar Servicio'}
+                                                    >
+                                                        <Power size={18} />
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    );
+                                })
+                            ) : (
+                                <tr>
+                                    <td colSpan={5} className="px-6 py-12 text-center text-slate-400">
+                                        <div className="flex flex-col items-center gap-2">
+                                            <Building2 size={48} className="opacity-20" />
+                                            <p>No se encontraron clientes registrados.</p>
+                                            <Button variant="ghost" size="sm" onClick={fetchComplexes} className="mt-2">
+                                                Reintentar cargar
+                                            </Button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            )}
+                        </tbody>
+                    </table>
+                </div>
             </div>
 
             <ModuleConfigModal
