@@ -26,7 +26,11 @@ import { ResidentHomePage } from './pages/resident/ResidentHomePage';
 import { ResidentVisitsPage } from './pages/resident/ResidentVisitsPage';
 import { ResidentAmenitiesPage } from './pages/resident/ResidentAmenitiesPage';
 import { ResidentPaymentsPage } from './pages/resident/ResidentPaymentsPage';
+import { ResidentVotingPage } from './pages/resident/ResidentVotingPage';
+import { PaymentResponsePage } from './pages/PaymentResponsePage';
+import { Visualizer3DPage } from './pages/Visualizer3DPage';
 import { UnitsPage } from './pages/UnitsPage';
+import { MaintenancePage } from './pages/MaintenancePage';
 
 function App() {
   console.log('--- App Rendered ---');
@@ -36,9 +40,10 @@ function App() {
         <ThemeProvider>
           <Routes>
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/payments/response" element={<PaymentResponsePage />} />
 
             <Route path="/" element={
-              <ProtectedRoute allowedRoles={['admin', 'guard']}>
+              <ProtectedRoute allowedRoles={['admin', 'guard', 'superadmin']}>
                 <Layout />
               </ProtectedRoute>
             }>
@@ -56,19 +61,21 @@ function App() {
               <Route path="finance" element={<FinancePage />} />
               <Route path="communications" element={<AnnouncementsPage />} />
               <Route path="super-admin" element={
-                <ProtectedRoute allowedRoles={['super_admin']}>
+                <ProtectedRoute allowedRoles={['superadmin']}>
                   <SuperAdminPage />
                 </ProtectedRoute>
               } />
               <Route path="payments" element={<PaymentsPage />} />
+              <Route path="visualizer-3d" element={<Visualizer3DPage />} />
               <Route path="pqrs" element={<PQRSPage />} />
               <Route path="access-terminal" element={<AccessTerminalPage />} />
               <Route path="reception" element={<ReceptionPage />} />
+              <Route path="maintenance" element={<MaintenancePage />} />
             </Route>
 
             {/* Resident Routes */}
             <Route path="/resident" element={
-              <ProtectedRoute allowedRoles={['resident']}>
+              <ProtectedRoute allowedRoles={['resident', 'propietario', 'residentepropietario']}>
                 <ResidentLayout />
               </ProtectedRoute>
             }>
@@ -77,6 +84,7 @@ function App() {
               <Route path="amenities" element={<ResidentAmenitiesPage />} />
               <Route path="store" element={<div>Tienda (Pronto)</div>} />
               <Route path="payments" element={<ResidentPaymentsPage />} />
+              <Route path="voting" element={<ResidentVotingPage />} />
             </Route>
 
             <Route path="*" element={<Navigate to="/" replace />} />

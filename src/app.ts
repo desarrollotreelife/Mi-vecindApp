@@ -25,10 +25,15 @@ import pqrsRoutes from './modules/pqrs/pqrs.routes';
 import documentsRoutes from './modules/documents/documents.routes';
 import votingRoutes from './modules/voting/voting.routes';
 import financeRoutes from './modules/finance/finance.routes';
+import walletRoutes from './modules/finance/wallet.routes';
+import maintenanceRoutes from './modules/maintenance/maintenance.routes';
 import mobileRoutes from './api/mobile/mobile.routes';
+import residentPortalRoutes from './modules/residents/resident-portal.routes';
 import superAdminRoutes from './modules/super-admin/super-admin.routes';
 import paymentRoutes from './modules/payments/payments.routes';
 import unitsRoutes from './modules/units/units.routes';
+import correspondenceRoutes from './modules/correspondence/correspondence.routes';
+import emergencyRoutes from './modules/emergency/emergency.routes';
 import path from 'path';
 
 // Serve static files from organized backup directory
@@ -51,6 +56,8 @@ import saasRoutes from './modules/saas/saas.routes';
 // app.use('/api/complexes', complexRoutes); // Deprecated/Removed
 app.use('/api/saas', saasRoutes);
 app.use('/api/auth', authRoutes);
+app.use('/api/correspondence', correspondenceRoutes);
+app.use('/api/emergency', emergencyRoutes);
 app.use('/api/residents', residentsRoutes);
 app.use('/api/access', accessRoutes);
 app.use('/api/visits', visitsRoutes);
@@ -63,13 +70,16 @@ app.use('/api/pqrs', pqrsRoutes);
 app.use('/api/documents', documentsRoutes);
 app.use('/api/voting', votingRoutes);
 app.use('/api/finance', financeRoutes);
+app.use('/api/finance/wallet', walletRoutes);
+app.use('/api/maintenance', maintenanceRoutes);
 app.use('/api/mobile/v1', mobileRoutes);
-app.use('/api/super-admin', superAdminRoutes); // Deprecated? Mantener por ahora
+app.use('/api/resident-portal', residentPortalRoutes);
+app.use('/api/super-admin', superAdminRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/units', unitsRoutes);
 
-// Initialize backup scheduler
-import { initializeBackupScheduler } from './config/scheduler';
-initializeBackupScheduler();
+// Initialize scheduler
+import { initializeScheduler } from './config/scheduler';
+initializeScheduler();
 
 export default app;

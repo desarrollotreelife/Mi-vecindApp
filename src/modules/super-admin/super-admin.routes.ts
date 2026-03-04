@@ -7,7 +7,7 @@ const router = Router();
 // Strict security: Only for specific super-admin logic in future.
 // For now, allow 'admin' to test this flow easily, assuming the first admin is super.
 router.use(authenticate);
-router.use(authorize(['admin']));
+router.use(authorize(['admin', 'superadmin']));
 
 router.get('/complexes', getComplexes);
 router.post('/complexes', createComplex);

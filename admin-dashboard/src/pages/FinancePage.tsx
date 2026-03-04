@@ -8,6 +8,7 @@ export const FinancePage: React.FC = () => {
     const [data, setData] = useState<any>(null);
     const [expenses, setExpenses] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+    const [actionLoading, setActionLoading] = useState(false);
     const [showModal, setShowModal] = useState(false);
 
     // Form State
@@ -36,6 +37,21 @@ export const FinancePage: React.FC = () => {
         fetchFinance();
     }, []);
 
+    const handleGenerateMonthlyBills = async () => {
+        if (!confirm('¿Estás seguro de generar la facturación mensual para todas las unidades? Este proceso creará las cuentas de cobro basadas en los coeficientes.')) return;
+
+        setActionLoading(true);
+        try {
+            const res = await api.post('/finance/bills/generate');
+            alert(res.data.message);
+            fetchFinance();
+        } catch (error: any) {
+            alert('Error al generar facturación: ' + (error.response?.data?.error || error.message));
+        } finally {
+            setActionLoading(false);
+        }
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
@@ -62,6 +78,14 @@ export const FinancePage: React.FC = () => {
                     <p className="text-slate-500">Resumen ejecutivo del conjunto</p>
                 </div>
                 <div className="flex gap-2">
+                    <Button
+                        variant="ghost"
+                        className="text-primary-600 hover:bg-primary-50"
+                        onClick={handleGenerateMonthlyBills}
+                        disabled={actionLoading}
+                    >
+                        {actionLoading ? 'Generando...' : 'Generar Facturación'}
+                    </Button>
                     <Button variant="outline"><FileText size={18} className="mr-2" /> Reportes</Button>
                     <Button onClick={() => setShowModal(true)}><Plus size={18} className="mr-2" /> Registrar Gasto</Button>
                 </div>

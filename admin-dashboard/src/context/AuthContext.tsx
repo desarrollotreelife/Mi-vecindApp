@@ -1,5 +1,4 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import api from '../services/api';
 
 interface AuthContextType {
     user: any;
@@ -14,19 +13,19 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [user, setUser] = useState<any>(() => {
-        const storedUser = sessionStorage.getItem('user');
+        const storedUser = localStorage.getItem('user');
         try {
             return storedUser && storedUser !== 'undefined' && storedUser !== 'null'
                 ? JSON.parse(storedUser)
                 : null;
         } catch (e) {
-            console.error('Failed to parse user from session storage', e);
+            console.error('Failed to parse user from local storage', e);
             return null;
         }
     });
 
     const [token, setToken] = useState<string | null>(() => {
-        const storedToken = sessionStorage.getItem('token');
+        const storedToken = localStorage.getItem('token');
         return storedToken && storedToken !== 'undefined' && storedToken !== 'null' ? storedToken : null;
     });
 
@@ -37,16 +36,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         console.log('AuthContext: Login called', userData);
         setToken(newToken);
         setUser(userData);
-        sessionStorage.setItem('token', newToken);
-        sessionStorage.setItem('user', JSON.stringify(userData));
+        localStorage.setItem('token', newToken);
+        localStorage.setItem('user', JSON.stringify(userData));
         // api.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
     };
 
     const logout = () => {
         setToken(null);
         setUser(null);
-        sessionStorage.removeItem('token');
-        sessionStorage.removeItem('user');
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
         // delete api.defaults.headers.common['Authorization'];
     };
 

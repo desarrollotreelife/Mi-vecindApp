@@ -102,4 +102,41 @@ export class PaymentsService {
             confirmationUrl: 'http://localhost:3001/api/payments/confirm'
         };
     }
+
+    async confirmPayment(data: any) {
+        // ePayco PJSON fields:
+        // x_id_invoice: FACT-ID-TIMESTAMP
+        // x_cod_response: 1 (Accepted), 2 (Rejected), 3 (Pending), 4 (Failed)
+        // x_ref_payco: Gateway reference
+        // x_extra1: bill_ID (we sent this as extra1)
+
+        const invoiceId = data.x_id_invoice;
+        const responseCode = Number(data.x_cod_response);
+        const billIdMatch = data.x_extra1?.match(/bill_(\d+)/);
+        const billId = billIdMatch ? Number(billIdMatch[1]) : null;
+
+        if (!billId) throw new Error('No se pudo identificar la factura');
+
+        console.log(`[ePayco Webhook] Invoice: ${invoiceId}, Code: ${responseCode}, Bill: ${billId}`);
+
+        if (responseCode === 1) {
+            // Payment Accepted
+            return await (prisma as any).$transaction([
+                (prisma as any).bill.update({
+                    where: { id: billId },
+                    data: { status: 'paid' }
+                }),
+                (prisma as any).payment.create({
+                    data: {
+                        bill_id: billId,
+                        amount: Number(data.x_amount),
+                        method: data.x_franchise || 'epayco',
+                        reference: data.x_ref_payco
+                    }
+                })
+            ]);
+        }
+
+        return { status: 'processed', code: responseCode };
+    }
 }

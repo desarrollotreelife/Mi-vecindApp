@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { CreditCard, CheckCircle, DollarSign, Home, User } from 'lucide-react';
+import { CheckCircle, DollarSign, Home, User } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { Badge } from '../components/ui/Badge';

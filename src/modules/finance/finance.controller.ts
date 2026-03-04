@@ -26,12 +26,16 @@ export const createBill = async (req: Request, res: Response) => {
 
 export const registerPayment = async (req: Request, res: Response) => {
     try {
+        const user = (req as any).user;
+        if (!user || !user.complex_id) return res.status(403).json({ error: 'Sin conjunto asignado' });
+
         const { billId, amount, method, reference } = req.body;
         const result = await financeService.registerPayment({
             billId: Number(billId),
             amount: Number(amount),
             method,
-            reference
+            reference,
+            complexId: user.complex_id
         });
         res.json(result);
     } catch (error: any) {
@@ -119,6 +123,21 @@ export const getExpenses = async (req: Request, res: Response) => {
 
         const result = await financeService.getExpenses(user.complex_id, filters);
         res.json(result);
+    } catch (error: any) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+export const generateMonthlyBills = async (req: Request, res: Response) => {
+    try {
+        const user = (req as any).user;
+        if (!user || !user.complex_id) return res.status(403).json({ error: 'Sin conjunto asignado' });
+
+        const result = await financeService.generateMonthlyBills(user.complex_id);
+        res.json({
+            message: `Proceso completado. Se generaron ${result?.length || 0} nuevas facturas.`,
+            count: result?.length || 0
+        });
     } catch (error: any) {
         res.status(500).json({ error: error.message });
     }

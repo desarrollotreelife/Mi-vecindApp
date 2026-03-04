@@ -43,7 +43,7 @@ export class ConfigService {
         if (data.photo) {
             try {
                 const filename = `user_${data.email ? data.email.split('@')[0] : Date.now()}`;
-                photoUrl = fileStorage.savePhoto(data.photo, 'usuarios', filename);
+                photoUrl = await fileStorage.savePhoto(data.photo, 'usuarios', filename);
             } catch (error) {
                 console.error('Error saving user photo:', error);
             }
@@ -86,7 +86,7 @@ export class ConfigService {
             try {
                 const user = await prisma.user.findUnique({ where: { id } });
                 const filename = `user_${user?.email?.split('@')[0] || id}`;
-                photoUrl = fileStorage.savePhoto(data.photo, 'usuarios', filename);
+                photoUrl = await fileStorage.savePhoto(data.photo, 'usuarios', filename);
             } catch (error) {
                 console.error('Error saving user photo:', error);
             }
@@ -266,6 +266,8 @@ export class ConfigService {
                 epayco_p_cust_id: true,
                 epayco_p_key: true,
                 is_payment_active: true,
+                billing_day: true,
+                base_admin_fee: true
                 // do not return private key
             }
         });
@@ -279,7 +281,9 @@ export class ConfigService {
             epayco_public_key: data.epayco_public_key,
             epayco_p_cust_id: data.epayco_p_cust_id,
             epayco_p_key: data.epayco_p_key,
-            is_payment_active: data.is_payment_active
+            is_payment_active: data.is_payment_active,
+            billing_day: Number(data.billing_day),
+            base_admin_fee: Number(data.base_admin_fee)
         };
 
         // Only update private key if provided (don't overwrite with null/empty if not changed)
@@ -290,6 +294,28 @@ export class ConfigService {
         return prisma.residentialComplex.update({
             where: { id: complexId },
             data: updateData
+        });
+    }
+
+    // --- 3D Layout Configuration ---
+
+    async getLayoutConfig() {
+        // Assuming single complex for now (ID=1)
+        const complexId = 1;
+        const complex = await prisma.residentialComplex.findUnique({
+            where: { id: complexId },
+            select: { layout_config: true }
+        });
+        return complex?.layout_config ? JSON.parse(complex.layout_config) : null;
+    }
+
+    async updateLayoutConfig(config: any) {
+        const complexId = 1;
+        return prisma.residentialComplex.update({
+            where: { id: complexId },
+            data: {
+                layout_config: JSON.stringify(config)
+            }
         });
     }
 

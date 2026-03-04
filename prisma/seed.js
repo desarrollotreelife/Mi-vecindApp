@@ -20,7 +20,7 @@ async function main() {
     console.log(`✅ Complex created: ${complex.name} (ID: ${complexId})`);
 
     // 1. Roles
-    const roles = ['admin', 'resident', 'guard', 'staff'];
+    const roles = ['admin', 'resident', 'guard', 'staff', 'propietario', 'residente_propietario'];
     for (const role of roles) {
         await prisma.role.upsert({
             where: { name: role },
@@ -41,7 +41,8 @@ async function main() {
     for (const u of units) {
         await prisma.unit.upsert({
             where: {
-                block_number: {
+                complex_id_block_number: {
+                    complex_id: complexId,
                     block: u.block,
                     number: u.number
                 }
@@ -97,13 +98,18 @@ async function main() {
     ];
     for (const s of slots) {
         await prisma.parkingSlot.upsert({
-            where: { code: s.code },
+            where: {
+                complex_id_code: {
+                    complex_id: complexId,
+                    code: s.code
+                }
+            },
             update: { floor: s.floor },
             create: {
                 code: s.code,
                 type: s.type,
-                floor: s.floor
-                // complex_id todo if added
+                floor: s.floor,
+                complex_id: complexId
             }
         });
     }

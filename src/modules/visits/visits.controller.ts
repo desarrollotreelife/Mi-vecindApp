@@ -62,3 +62,15 @@ export const verifyQR = async (req: Request, res: Response) => {
         res.status(500).json({ error: error.message });
     }
 };
+
+export const configurePermanent = async (req: Request, res: Response) => {
+    try {
+        const id = Number(req.params.id);
+        const config = req.body;
+
+        const result = await visitsService.configurePermanentVisitor(id, config);
+        res.json({ message: 'Visitante configurado exitosamente', visitor: result });
+    } catch (error: any) {
+        res.status(400).json({ error: error.message });
+    }
+};

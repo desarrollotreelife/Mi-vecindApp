@@ -134,4 +134,23 @@ router.put('/payment-config', async (req, res) => {
     }
 });
 
+// 3D Layout Configuration
+router.get('/layout-config', async (req, res) => {
+    try {
+        const config = await configService.getLayoutConfig();
+        res.json(config);
+    } catch (error: any) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+router.put('/layout-config', async (req, res) => {
+    try {
+        const result = await configService.updateLayoutConfig(req.body);
+        res.json(result);
+    } catch (error: any) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 export default router;

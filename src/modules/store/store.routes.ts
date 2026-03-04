@@ -1,20 +1,42 @@
 import { Router } from 'express';
-import * as storeController from './store.controller';
+import {
+    getProducts,
+    createProduct,
+    updateProduct,
+    registerSale,
+    getStats,
+    openShift,
+    closeShift,
+    getCatalogProducts,
+    importFromCatalog
+} from './store.controller';
+import { createSubscription, getMySubscriptions, updateSubscription } from './subscription.controller';
+import { authenticate } from '../../core/auth.middleware';
 
 const router = Router();
 
 // Products
-router.get('/products', storeController.getProducts);
-router.post('/products', storeController.createProduct); // TODO: Add Auth Middleware
-router.put('/products/:id', storeController.updateProduct);
+router.get('/', authenticate, getProducts);
+router.post('/', authenticate, createProduct);
+router.put('/:id', authenticate, updateProduct);
 
-// Sales
-router.post('/sales', storeController.registerSale);
-router.get('/stats', storeController.getStats);
+// Catalog Routes
+router.get('/catalog', authenticate, getCatalogProducts);
+router.post('/catalog/import', authenticate, importFromCatalog);
 
-// Shifts
-router.post('/shifts/open', storeController.openShift);
-router.post('/shifts/close', storeController.closeShift);
-router.get('/shifts/status', storeController.getShiftStatus);
+// Shift routes
+router.post('/shift/open', authenticate, openShift);
+router.post('/shift/close', authenticate, closeShift);
+
+// Sale route
+router.post('/sales', authenticate, registerSale);
+
+// Analytics
+router.get('/stats', authenticate, getStats);
+
+// Subscriptions
+router.post('/subscriptions', authenticate, createSubscription);
+router.get('/subscriptions', authenticate, getMySubscriptions);
+router.put('/subscriptions/:id', authenticate, updateSubscription);
 
 export default router;

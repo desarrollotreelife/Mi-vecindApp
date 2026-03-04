@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Camera, Settings, RefreshCw, Monitor } from 'lucide-react';
+import { Camera, Settings, Monitor } from 'lucide-react';
 import { Button } from '../ui/Button';
 
 interface CameraManagerProps {

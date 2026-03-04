@@ -1,13 +1,17 @@
 import cron from 'node-cron';
 import { backupService } from '../services/backup.service';
+import { FinanceService } from '../modules/finance/finance.service';
+import { SubscriptionCron } from '../modules/store/subscription.cron';
+
+const financeService = new FinanceService();
 
 /**
- * Schedule automatic daily backups
- * Runs every day at 2:00 AM
+ * Schedule automatic daily backups and billing
  */
-export function initializeBackupScheduler() {
+export function initializeScheduler() {
     // Daily backup at 2:00 AM
     cron.schedule('0 2 * * *', async () => {
+        // ... (existing backup code)
         console.log('\n⏰ Ejecutando backup automático diario...');
         try {
             await backupService.createDailyBackup();
@@ -22,8 +26,25 @@ export function initializeBackupScheduler() {
         }
     });
 
-    console.log('✅ Programador de backups inicializado');
+    // Daily billing check at 1:00 AM
+    cron.schedule('0 1 * * *', async () => {
+        console.log('\n⏰ Verificando facturación mensual automática...');
+        try {
+            await financeService.checkAndGenerateAllBills();
+        } catch (error) {
+            console.error('❌ Error en facturación automática:', error);
+        }
+    });
+
+    // Daily Subscription Processing at 6:00 AM
+    cron.schedule('0 6 * * *', async () => {
+        await SubscriptionCron.processDailySubscriptions();
+    });
+
+    console.log('✅ Programador de tareas inicializado');
     console.log('   📅 Backup diario: 2:00 AM');
+    console.log('   💰 Facturación: 1:00 AM');
+    console.log('   🛒 Suscripciones tienda: 6:00 AM');
     console.log('   🔄 Rotación: 31 días');
     console.log('   💾 Ubicación:', backupService['backupDir']);
 

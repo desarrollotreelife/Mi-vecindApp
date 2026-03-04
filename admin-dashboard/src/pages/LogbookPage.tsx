@@ -1,19 +1,22 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { Save, Clock, User, BookOpen, AlertTriangle, List, Plus } from 'lucide-react';
+import { Save, User, BookOpen, AlertTriangle, List, Plus, Camera, X, Image as ImageIcon } from 'lucide-react';
 
 interface LogEntry {
     id: string;
     guardName: string;
     timestamp: string;
     content: string;
+    photoUrl?: string;
 }
 
 export const LogbookPage = () => {
     const { user } = useAuth();
     const [entries, setEntries] = useState<LogEntry[]>([]);
     const [content, setContent] = useState('');
+    const [photoDataUrl, setPhotoDataUrl] = useState<string | null>(null);
     const [currentTime, setCurrentTime] = useState(new Date());
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     // Update time every minute
     useEffect(() => {
@@ -29,20 +32,58 @@ export const LogbookPage = () => {
         }
     }, []);
 
+    const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        // Check if file is image and size is reasonable (max 2MB for local storage)
+        if (!file.type.startsWith('image/')) {
+            alert('Por favor selecciona una imagen válida.');
+            return;
+        }
+        if (file.size > 2 * 1024 * 1024) {
+            alert('La imagen es demasiado grande. Máximo 2MB.');
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            setPhotoDataUrl(reader.result as string);
+        };
+        reader.readAsDataURL(file);
+    };
+
+    const removePhoto = () => {
+        setPhotoDataUrl(null);
+        if (fileInputRef.current) {
+            fileInputRef.current.value = '';
+        }
+    };
+
     const handleSave = () => {
-        if (!content.trim()) return;
+        if (!content.trim() && !photoDataUrl) return;
 
         const newEntry: LogEntry = {
             id: Date.now().toString(),
-            guardName: user?.name || 'Guardia Desconocido',
+            guardName: user?.name || user?.full_name || 'Guardia de Turno',
             timestamp: new Date().toISOString(),
-            content: content
+            content: content || 'Registro fotográfico adjuntado.',
+            photoUrl: photoDataUrl || undefined
         };
 
         const updatedEntries = [newEntry, ...entries];
         setEntries(updatedEntries);
-        localStorage.setItem('logbook_entries', JSON.stringify(updatedEntries));
+
+        try {
+            localStorage.setItem('logbook_entries', JSON.stringify(updatedEntries));
+        } catch (e) {
+            alert('No se pudo guardar la imagen. La memoria local (localStorage) térmica puede estar llena. Intenta borrar otros registros o usar una imagen más pequeña.');
+            console.error(e);
+            return;
+        }
+
         setContent(''); // Clear form
+        removePhoto();
     };
 
     // Role check
@@ -103,14 +144,49 @@ export const LogbookPage = () => {
                                 <textarea
                                     value={content}
                                     onChange={(e) => setContent(e.target.value)}
-                                    className="w-full border border-slate-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none resize-none h-40"
+                                    className="w-full border border-slate-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none resize-none h-32"
                                     placeholder="Describa la novedad, incidente o reporte de turno..."
+                                />
+                            </div>
+
+                            <div className="border border-slate-200 rounded-lg p-3 bg-slate-50">
+                                <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Evidencia Fotográfica (Opcional)</label>
+
+                                {!photoDataUrl ? (
+                                    <button
+                                        onClick={() => fileInputRef.current?.click()}
+                                        className="w-full flex flex-col items-center justify-center py-6 border-2 border-dashed border-slate-300 rounded-lg text-slate-500 hover:text-blue-600 hover:border-blue-400 hover:bg-blue-50 transition-all cursor-pointer"
+                                    >
+                                        <Camera size={24} className="mb-2" />
+                                        <span className="text-sm font-medium">Adjuntar Foto</span>
+                                        <span className="text-xs text-slate-400 mt-1">PNG, JPG hasta 2MB</span>
+                                    </button>
+                                ) : (
+                                    <div className="relative rounded-lg overflow-hidden border border-slate-200 group">
+                                        <img src={photoDataUrl} alt="Preview" className="w-full h-32 object-cover" />
+                                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                            <button
+                                                onClick={removePhoto}
+                                                className="bg-red-500 text-white p-2 rounded-full hover:bg-red-600 transition-colors shadow-lg"
+                                                title="Eliminar foto"
+                                            >
+                                                <X size={16} />
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+                                <input
+                                    type="file"
+                                    accept="image/*"
+                                    className="hidden"
+                                    ref={fileInputRef}
+                                    onChange={handlePhotoSelect}
                                 />
                             </div>
 
                             <button
                                 onClick={handleSave}
-                                disabled={!content.trim()}
+                                disabled={!content.trim() && !photoDataUrl}
                                 className="w-full bg-blue-600 text-white rounded-lg py-2.5 px-4 font-semibold shadow-sm hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2 text-sm"
                             >
                                 <Save size={16} />
@@ -173,9 +249,29 @@ export const LogbookPage = () => {
                                                     </div>
                                                 </td>
                                                 <td className="px-6 py-4">
-                                                    <p className="text-slate-600 leading-relaxed whitespace-pre-wrap">
-                                                        {entry.content}
-                                                    </p>
+                                                    <div className="flex flex-col gap-3">
+                                                        <p className="text-slate-600 leading-relaxed whitespace-pre-wrap">
+                                                            {entry.content}
+                                                        </p>
+
+                                                        {entry.photoUrl && (
+                                                            <div className="mt-2 text-sm">
+                                                                <details className="group">
+                                                                    <summary className="flex items-center gap-2 text-blue-600 font-medium cursor-pointer hover:text-blue-700 select-none">
+                                                                        <ImageIcon size={16} />
+                                                                        <span>Ver Evidencia Adjunta</span>
+                                                                    </summary>
+                                                                    <div className="mt-3 bg-slate-100 p-2 rounded-lg border border-slate-200 inline-block">
+                                                                        <img
+                                                                            src={entry.photoUrl}
+                                                                            alt="Evidencia adjunta"
+                                                                            className="max-h-64 rounded shadow-sm object-contain"
+                                                                        />
+                                                                    </div>
+                                                                </details>
+                                                            </div>
+                                                        )}
+                                                    </div>
                                                 </td>
                                             </tr>
                                         ))}

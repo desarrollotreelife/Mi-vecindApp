@@ -21,7 +21,6 @@ export const AccessTerminalPage: React.FC = () => {
     const [accessStatus, setAccessStatus] = useState<'idle' | 'granted' | 'denied'>('idle');
     const [identifiedPerson, setIdentifiedPerson] = useState<any>(null);
     const [residents, setResidents] = useState<any[]>([]);
-    const [objectModel, setObjectModel] = useState<any>(null); // COCO-SSD Model
     const [modelsLoaded, setModelsLoaded] = useState(false);
 
     const { theme: globalTheme, toggleTheme } = useTheme();
@@ -44,10 +43,8 @@ export const AccessTerminalPage: React.FC = () => {
         const init = async () => {
             try {
                 // 1. Critical Data (Fast)
-                const [residentsRes, logsRes] = await Promise.all([
-                    api.get('/residents'),
-                    api.get('/access/logs').catch(e => ({ data: [] }))
-                ]);
+                const residentsRes = await api.get('/residents');
+                const logsRes = await api.get('/access/logs').catch(() => ({ data: [] }));
 
                 // Process Residents
                 const validResidents = residentsRes.data
@@ -240,9 +237,10 @@ export const AccessTerminalPage: React.FC = () => {
 
                     // Always show feedback for manual scans
                     if (isManual) {
-                        const msg = `USUARIO NO IDENTIFICADO\nDiferencia: ${realMinDistance.toFixed(2)}`;
-                        const utterance = new SpeechSynthesisUtterance("Acceso no autorizado");
-                        window.speechSynthesis.speak(utterance);
+                        try {
+                            const utterance = new SpeechSynthesisUtterance("Acceso no autorizado");
+                            window.speechSynthesis.speak(utterance);
+                        } catch { }
 
                         setIdentifiedPerson({ error: "USUARIO NO IDENTIFICADO", detail: `Diferencia: ${realMinDistance.toFixed(2)}` });
                         setTimeout(() => {

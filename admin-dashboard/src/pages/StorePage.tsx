@@ -15,6 +15,8 @@ interface Product {
     price: string; // Decimal string from backend
     current_stock: number;
     min_stock: number;
+    category?: string;
+    image_url?: string;
 }
 
 interface CartItem extends Product {
@@ -74,10 +76,15 @@ const SalesHistory = () => {
 
 export const StorePage: React.FC = () => {
     const [activeTab, setActiveTab] = useState<'pos' | 'inventory' | 'history'>('pos');
+    const [inventoryTab, setInventoryTab] = useState<'my_products' | 'catalog'>('my_products');
     const [products, setProducts] = useState<Product[]>([]);
+    const [catalogProducts, setCatalogProducts] = useState<Product[]>([]);
     const [cart, setCart] = useState<CartItem[]>([]);
     const [selectedResident, setSelectedResident] = useState('');
     const [residents, setResidents] = useState<any[]>([]);
+
+    const [searchTerm, setSearchTerm] = useState('');
+    const [activeCategory, setActiveCategory] = useState('all');
 
 
     // Shift State
@@ -91,9 +98,38 @@ export const StorePage: React.FC = () => {
 
     useEffect(() => {
         fetchProducts();
+        fetchCatalogProducts();
         fetchResidents();
         fetchShiftStatus();
     }, []);
+
+    const fetchCatalogProducts = async () => {
+        try {
+            const res = await api.get('/store/catalog');
+            setCatalogProducts(res.data);
+        } catch (error) {
+            console.error('Error loading catalog:', error);
+        }
+    };
+
+    const importProduct = async (product: Product) => {
+        const stockStr = prompt(`Ingrese el stock inicial para ${product.name}:`, '0');
+        if (stockStr === null) return;
+        const initialStock = parseInt(stockStr, 10);
+        if (isNaN(initialStock) || initialStock < 0) {
+            alert('Stock inválido');
+            return;
+        }
+
+        try {
+            await api.post('/store/catalog/import', { productId: product.id, initialStock });
+            alert(`Producto ${product.name} añadido a tu tienda.`);
+            fetchProducts();
+            setInventoryTab('my_products');
+        } catch (error: any) {
+            alert(error.response?.data?.error || 'Error al importar producto');
+        }
+    };
 
     const fetchShiftStatus = async () => {
         try {
@@ -217,6 +253,14 @@ export const StorePage: React.FC = () => {
         }
     };
 
+    const categories = ['all', ...Array.from(new Set(products.map(p => p.category).filter(Boolean)))];
+
+    const filteredProducts = products.filter(p => {
+        const matchesCategory = activeCategory === 'all' || p.category === activeCategory;
+        const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase()) || p.sku.toLowerCase().includes(searchTerm.toLowerCase());
+        return matchesCategory && matchesSearch;
+    });
+
     return (
         <div className="space-y-6 h-[calc(100vh-100px)] flex flex-col">
             <div className="flex justify-between items-center shrink-0">
@@ -279,31 +323,60 @@ export const StorePage: React.FC = () => {
                 <div className="flex gap-6 flex-1 overflow-hidden">
                     {/* Catalog */}
                     <div className="flex-1 overflow-y-auto bg-white rounded-xl border border-slate-200 p-6">
-                        <div className="mb-6 flex gap-4">
-                            <div className="relative flex-1">
-                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
-                                <input
-                                    type="text"
-                                    placeholder="Buscar productos..."
-                                    className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none"
-                                />
+                        <div className="mb-4 flex flex-col gap-4">
+                            <div className="flex gap-4">
+                                <div className="relative flex-1">
+                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
+                                    <input
+                                        type="text"
+                                        placeholder="Buscar productos..."
+                                        value={searchTerm}
+                                        onChange={(e) => setSearchTerm(e.target.value)}
+                                        className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none"
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Categories Filter */}
+                            <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+                                {categories.map((cat: any) => (
+                                    <button
+                                        key={cat}
+                                        onClick={() => setActiveCategory(cat)}
+                                        className={`px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-all ${activeCategory === cat
+                                            ? 'bg-slate-800 text-white shadow-md'
+                                            : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                                            }`}
+                                    >
+                                        {cat === 'all' ? 'Todos' : cat}
+                                    </button>
+                                ))}
                             </div>
                         </div>
 
                         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                            {products.map(product => (
+                            {filteredProducts.map(product => (
                                 <div key={product.id}
                                     className={`border rounded-xl p-4 cursor-pointer transition-all hover:shadow-md ${product.current_stock === 0 ? 'opacity-50 grayscale cursor-not-allowed' : 'hover:border-primary-300'}`}
                                     onClick={() => product.current_stock > 0 && addToCart(product)}
                                 >
-                                    <div className="h-32 bg-slate-100 rounded-lg mb-3 flex items-center justify-center text-4xl">
-                                        🥤
+                                    <div className="h-32 bg-slate-100 rounded-lg mb-3 flex items-center justify-center text-4xl overflow-hidden relative">
+                                        {product.image_url ? (
+                                            <img src={product.image_url} alt={product.name} className="w-full h-full object-cover" />
+                                        ) : (
+                                            <span>🛒</span>
+                                        )}
+                                        {product.category && (
+                                            <span className="absolute top-2 left-2 bg-black/50 backdrop-blur-md text-white px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider shadow-sm">
+                                                {product.category}
+                                            </span>
+                                        )}
                                     </div>
-                                    <h3 className="font-semibold text-slate-800 mb-1">{product.name}</h3>
-                                    <div className="flex justify-between items-center">
-                                        <span className="font-bold text-lg text-primary-600">${Number(product.price).toFixed(2)}</span>
-                                        <Badge variant={product.current_stock > 10 ? 'success' : product.current_stock > 0 ? 'warning' : 'default'}>
-                                            Stock: {product.current_stock}
+                                    <h3 className="font-semibold text-slate-800 mb-1 leading-tight line-clamp-2" title={product.name}>{product.name}</h3>
+                                    <div className="flex justify-between items-center mt-2">
+                                        <span className="font-bold text-lg text-primary-600">${Number(product.price).toLocaleString()}</span>
+                                        <Badge variant={product.current_stock > 10 ? 'success' : product.current_stock > 0 ? 'warning' : 'default'} className="text-[10px] px-1.5 py-0.5">
+                                            Stock {product.current_stock}
                                         </Badge>
                                     </div>
                                 </div>
@@ -396,28 +469,63 @@ export const StorePage: React.FC = () => {
                     </div>
                 </div>
             ) : (
-                <div className="bg-white rounded-xl border border-slate-200 p-6 flex-1">
-                    <div className="flex justify-between mb-6">
-                        <h2 className="text-lg font-semibold">Inventario de Productos</h2>
-                        <Button icon={Plus} onClick={() => alert('Próximamente: Crear Producto')}>Nuevo Producto</Button>
+                <div className="bg-white rounded-xl border border-slate-200 p-6 flex-1 flex flex-col">
+                    <div className="flex justify-between items-center mb-6">
+                        <div className="flex bg-slate-100 p-1 rounded-lg">
+                            <button
+                                onClick={() => setInventoryTab('my_products')}
+                                className={`px-4 py-2 text-sm font-medium rounded-md transition-all ${inventoryTab === 'my_products' ? 'bg-white shadow text-slate-900' : 'text-slate-500 hover:text-slate-900'}`}
+                            >
+                                Mis Productos
+                            </button>
+                            <button
+                                onClick={() => setInventoryTab('catalog')}
+                                className={`px-4 py-2 text-sm font-medium rounded-md transition-all ${inventoryTab === 'catalog' ? 'bg-white shadow text-slate-900' : 'text-slate-500 hover:text-slate-900'}`}
+                            >
+                                Catálogo Sugerido
+                            </button>
+                        </div>
+                        {inventoryTab === 'my_products' && (
+                            <Button icon={Plus} onClick={() => alert('Próximamente: Crear Producto')}>Nuevo Producto</Button>
+                        )}
                     </div>
-                    <Table
-                        data={products}
-                        columns={[
-                            { header: 'Producto', accessor: 'name', className: 'font-medium' },
-                            { header: 'SKU', accessor: 'sku' },
-                            { header: 'Precio', accessor: (p) => `$${Number(p.price).toFixed(2)}` },
-                            {
-                                header: 'Stock',
-                                accessor: 'current_stock',
-                                render: (val) => (
-                                    <Badge variant={val > 10 ? 'success' : val > 0 ? 'warning' : 'error'}>
-                                        {val} un.
-                                    </Badge>
-                                )
-                            },
-                        ]}
-                    />
+
+                    {inventoryTab === 'my_products' ? (
+                        <Table
+                            data={products}
+                            columns={[
+                                { header: 'Producto', accessor: 'name', className: 'font-medium' },
+                                { header: 'SKU', accessor: 'sku' },
+                                { header: 'Precio', accessor: (p) => `$${Number(p.price).toFixed(2)}` },
+                                {
+                                    header: 'Stock',
+                                    accessor: 'current_stock',
+                                    render: (val) => (
+                                        <Badge variant={val > 10 ? 'success' : val > 0 ? 'warning' : 'error'}>
+                                            {val} un.
+                                        </Badge>
+                                    )
+                                },
+                            ]}
+                        />
+                    ) : (
+                        <Table
+                            data={catalogProducts}
+                            columns={[
+                                { header: 'Producto', accessor: 'name', className: 'font-medium' },
+                                { header: 'Categoría', accessor: 'category' },
+                                { header: 'Precio Sugerido', accessor: (p) => `$${Number(p.price).toFixed(2)}` },
+                                {
+                                    header: 'Acciones',
+                                    accessor: (p) => (
+                                        <Button size="sm" onClick={() => importProduct(p)}>
+                                            Añadir a mi tienda
+                                        </Button>
+                                    )
+                                },
+                            ]}
+                        />
+                    )}
                 </div>
             )}
         </div>

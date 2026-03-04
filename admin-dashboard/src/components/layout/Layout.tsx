@@ -3,6 +3,7 @@ import { Sidebar } from './Sidebar';
 import { Navbar } from './Navbar';
 import { Outlet } from 'react-router-dom';
 import { WelcomeBanner } from '../common/WelcomeBanner';
+import { EmergencyMonitor } from '../common/EmergencyMonitor';
 
 export const Layout: React.FC = () => {
     const [sidebarOpen, setSidebarOpen] = useState(window.innerWidth > 768);
@@ -10,6 +11,7 @@ export const Layout: React.FC = () => {
     return (
         <div className="flex h-screen bg-slate-50 dark:bg-slate-950 overflow-hidden transition-colors duration-300">
             <WelcomeBanner />
+            <EmergencyMonitor />
             {/* Sidebar */}
             <Sidebar isOpen={sidebarOpen} toggle={() => setSidebarOpen(!sidebarOpen)} />
 

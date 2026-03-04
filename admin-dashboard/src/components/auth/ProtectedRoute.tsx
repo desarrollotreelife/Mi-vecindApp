@@ -39,11 +39,12 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowe
         return <Navigate to="/login" state={{ from: location }} replace />;
     }
 
-    if (allowedRoles && userRole) {
-        const normalizedUserRole = String(userRole).toLowerCase().trim();
-        const normalizedAllowedRoles = allowedRoles.map(r => r.toLowerCase().trim());
+    const normalizedUserRole = String(userRole).toLowerCase().trim().replace('_', '');
 
-        // Check for exact match OR if 'admin' is allowed and user is 'superadmin' etc (optional, but good for safety)
+    if (allowedRoles) {
+        const normalizedAllowedRoles = allowedRoles.map(r => r.toLowerCase().trim().replace('_', ''));
+
+        // Check for exact match OR if staff override applies
         const isAllowed = normalizedAllowedRoles.includes(normalizedUserRole) ||
             (normalizedAllowedRoles.includes('admin') && normalizedUserRole.includes('admin'));
 
@@ -51,7 +52,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowe
             console.error(`[ProtectedRoute] Access Denied! Role '${normalizedUserRole}' is NOT in [${normalizedAllowedRoles}]`);
 
             // Redirect based on actual role
-            if (normalizedUserRole === 'resident') {
+            if (['resident', 'propietario', 'residentepropietario'].includes(normalizedUserRole)) {
                 // Prevent infinite redirect loop if we are already at /resident
                 if (location.pathname.startsWith('/resident')) {
                     console.log('[ProtectedRoute] Role is resident and path is /resident. ALLOWING.');
@@ -59,6 +60,14 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowe
                 }
                 console.log('[ProtectedRoute] Redirecting resident to /resident');
                 return <Navigate to="/resident" replace />;
+            }
+
+            if (normalizedUserRole === 'superadmin') {
+                if (location.pathname.startsWith('/super-admin')) {
+                    return <>{children}</>;
+                }
+                console.log('[ProtectedRoute] Redirecting superadmin to /super-admin');
+                return <Navigate to="/super-admin" replace />;
             }
 
             if (['admin', 'guard', 'vigilante', 'celador'].includes(normalizedUserRole)) {

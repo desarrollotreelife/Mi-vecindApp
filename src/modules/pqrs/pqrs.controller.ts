@@ -16,12 +16,12 @@ export const createPQRS = async (req: Request, res: Response) => {
 export const getPQRS = async (req: Request, res: Response) => {
     try {
         const user = (req as any).user;
-        // Residents only see their own, Admins see all
-        // Assuming role ID 1/2 is admin/guard, 3 is resident. 
-        // Better to check role name if available in request user object
-        const userId = (user.role_id === 3 || user.role?.name === 'resident') ? user.id : undefined;
+        if (!user || !user.complex_id) return res.status(403).json({ error: 'Sin conjunto asignado' });
 
-        const result = await pqrsService.getPQRS(userId);
+        // Residents only see their own, Admins see all for their complex
+        const userId = (user.role?.name === 'resident') ? user.id : undefined;
+
+        const result = await pqrsService.getPQRS(user.complex_id, userId);
         res.json(result);
     } catch (error: any) {
         res.status(500).json({ error: error.message });
@@ -30,9 +30,12 @@ export const getPQRS = async (req: Request, res: Response) => {
 
 export const respondPQRS = async (req: Request, res: Response) => {
     try {
+        const user = (req as any).user;
+        if (!user || !user.complex_id) return res.status(403).json({ error: 'Sin conjunto asignado' });
+
         const id = Number(req.params.id);
         const { response } = req.body;
-        const result = await pqrsService.respondPQRS(id, response);
+        const result = await pqrsService.respondPQRS(id, user.complex_id, response);
         res.json(result);
     } catch (error: any) {
         res.status(400).json({ error: error.message });

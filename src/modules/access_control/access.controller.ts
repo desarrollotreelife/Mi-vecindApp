@@ -36,3 +36,13 @@ export const getLogs = async (req: Request, res: Response) => {
         res.status(500).json({ error: error.message });
     }
 };
+
+export const handleLPRWebhook = async (req: Request, res: Response) => {
+    try {
+        const { plate, camera_id, snapshot_base64 } = req.body;
+        const result = await accessService.processLPRWebhook(plate, camera_id, snapshot_base64);
+        res.json(result);
+    } catch (error: any) {
+        res.status(400).json({ error: error.message });
+    }
+};

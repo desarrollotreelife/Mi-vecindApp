@@ -15,17 +15,34 @@ interface ResidentFormProps {
 export const ResidentForm: React.FC<ResidentFormProps> = ({ isOpen, onClose, onSuccess, initialData }) => {
     const [isLoading, setIsLoading] = useState(false);
     const [showCamera, setShowCamera] = useState(false);
+    const [unitsStructure, setUnitsStructure] = useState<Record<string, any[]>>({});
     const [formData, setFormData] = useState({
         full_name: '',
         email: '',
         phone: '',
         document_num: '',
+        unit_id: '',
         unit_number: '',
         user_type: 'resident',
         photo: '', // Base64 string
         biometric_descriptor: '',
-        password: ''
+        password: '',
+        coefficient: ''
     });
+
+    useEffect(() => {
+        const fetchStructure = async () => {
+            try {
+                const response = await api.get('/units/structure');
+                setUnitsStructure(response.data);
+            } catch (error) {
+                console.error('Error fetching units structure:', error);
+            }
+        };
+        if (isOpen) {
+            fetchStructure();
+        }
+    }, [isOpen]);
 
     useEffect(() => {
         if (initialData) {
@@ -34,11 +51,13 @@ export const ResidentForm: React.FC<ResidentFormProps> = ({ isOpen, onClose, onS
                 email: initialData.email || '',
                 phone: initialData.phone || '',
                 document_num: initialData.document_num || '',
+                unit_id: initialData.unit_id || '',
                 unit_number: initialData.unit_number || '',
                 user_type: initialData.role === 'admin' ? 'admin' : initialData.role === 'guard' ? 'guard' : 'resident',
                 photo: initialData.profile_photo || '',
                 biometric_descriptor: initialData.biometric_descriptor || '',
-                password: ''
+                password: '',
+                coefficient: initialData.coefficient || ''
             });
         } else {
             setFormData({
@@ -46,11 +65,13 @@ export const ResidentForm: React.FC<ResidentFormProps> = ({ isOpen, onClose, onS
                 email: '',
                 phone: '',
                 document_num: '',
+                unit_id: '',
                 unit_number: '',
                 user_type: 'resident',
                 photo: '',
                 biometric_descriptor: '',
-                password: ''
+                password: '',
+                coefficient: ''
             });
         }
     }, [initialData, isOpen]);
@@ -61,14 +82,47 @@ export const ResidentForm: React.FC<ResidentFormProps> = ({ isOpen, onClose, onS
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
+    const resizeImage = (base64Str: string): Promise<string> => {
+        return new Promise((resolve) => {
+            const img = new Image();
+            img.src = base64Str;
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                const MAX_WIDTH = 800;
+                let width = img.width;
+                let height = img.height;
+
+                if (width > MAX_WIDTH) {
+                    height *= MAX_WIDTH / width;
+                    width = MAX_WIDTH;
+                }
+
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx?.drawImage(img, 0, 0, width, height);
+                resolve(canvas.toDataURL('image/jpeg', 0.8));
+            };
+        });
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsLoading(true);
         try {
+            const submitData = {
+                ...formData,
+                type: ['resident', 'propietario', 'residente_propietario'].includes(formData.user_type)
+                    ? formData.user_type
+                    : 'resident'
+            };
+
+            // Final check on image size/compression before sending could be here, 
+            // but we'll do it on capture to show immediate preview of optimized image.
             if (initialData?.id) {
-                await api.put(`/residents/${initialData.id}`, formData);
+                await api.put(`/residents/${initialData.id}`, submitData);
             } else {
-                await api.post('/residents', formData);
+                await api.post('/residents', submitData);
             }
             onSuccess();
             onClose();
@@ -121,9 +175,8 @@ export const ResidentForm: React.FC<ResidentFormProps> = ({ isOpen, onClose, onS
                                 <input
                                     type="email"
                                     name="email"
-                                    required
                                     className="w-full pl-10 pr-4 py-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none transition-all"
-                                    placeholder="ejemplo@email.com"
+                                    placeholder="ejemplo@email.com (Opcional)"
                                     value={formData.email}
                                     onChange={handleChange}
                                 />
@@ -133,31 +186,18 @@ export const ResidentForm: React.FC<ResidentFormProps> = ({ isOpen, onClose, onS
 
 
                         <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1">Contraseña de Ingreso</label>
-                            <input
-                                type="text"
-                                name="password"
-                                className="w-full px-4 py-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none transition-all"
-                                placeholder={initialData ? "Dejar vacío para mantener actual" : "Asignar contraseña inicial"}
-                                value={formData.password}
-                                onChange={handleChange}
-                            />
-                            <p className="text-xs text-slate-400 mt-1">El residente podrá cambiarla después desde su perfil.</p>
-                        </div>
-
-                        <div>
                             <label className="block text-sm font-medium text-slate-700 mb-1">Usuario de Sistema (Auto-generado)</label>
                             <div className="relative">
-                                <User className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                                <CreditCard className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                                 <input
                                     type="text"
                                     disabled
                                     className="w-full pl-10 pr-4 py-2 rounded-lg border border-slate-200 bg-slate-50 text-slate-500"
-                                    value={formData.email}
-                                    placeholder="Se usará el correo como usuario"
+                                    value={formData.document_num}
+                                    placeholder="Se usará la cédula como usuario"
                                 />
                             </div>
-                            <p className="text-xs text-slate-400 mt-1">Este será el usuario para que el residente inicie sesión (Copia del correo).</p>
+                            <p className="text-xs text-slate-400 mt-1">Este será el usuario para que el residente inicie sesión (Copia del número de documento).</p>
                         </div>
 
                         <div className="grid grid-cols-2 gap-4">
@@ -176,20 +216,33 @@ export const ResidentForm: React.FC<ResidentFormProps> = ({ isOpen, onClose, onS
                                     />
                                 </div>
                             </div>
+
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1">Cédula</label>
-                                <div className="relative">
-                                    <CreditCard className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                                    <input
-                                        type="text"
-                                        name="document_num"
-                                        required
-                                        className="w-full pl-10 pr-4 py-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none transition-all"
-                                        placeholder="123456789"
-                                        value={formData.document_num}
-                                        onChange={handleChange}
-                                    />
-                                </div>
+                                <label className="block text-sm font-medium text-slate-700 mb-1">Contraseña Inicial</label>
+                                <input
+                                    type="text"
+                                    name="password"
+                                    className="w-full px-4 py-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none transition-all"
+                                    placeholder={initialData ? "Dejar vacío = actual" : "Defecto: 123456"}
+                                    value={formData.password}
+                                    onChange={handleChange}
+                                />
+                            </div>
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">Cédula (Obligatorio)</label>
+                            <div className="relative">
+                                <CreditCard className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                                <input
+                                    type="text"
+                                    name="document_num"
+                                    required
+                                    className="w-full pl-10 pr-4 py-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none transition-all"
+                                    placeholder="123456789"
+                                    value={formData.document_num}
+                                    onChange={handleChange}
+                                />
                             </div>
                         </div>
 
@@ -229,15 +282,33 @@ export const ResidentForm: React.FC<ResidentFormProps> = ({ isOpen, onClose, onS
                             <label className="block text-sm font-medium text-slate-700 mb-1">Unidad/Apto</label>
                             <div className="relative">
                                 <Home className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                                <input
-                                    type="text"
-                                    name="unit_number"
+                                <select
+                                    name="unit_id"
                                     required
-                                    className="w-full pl-10 pr-4 py-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none transition-all"
-                                    placeholder="T1-204"
-                                    value={formData.unit_number}
-                                    onChange={handleChange}
-                                />
+                                    className="w-full pl-10 pr-4 py-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none transition-all appearance-none bg-white"
+                                    value={formData.unit_id}
+                                    onChange={(e) => {
+                                        const unitId = e.target.value;
+                                        // Find the unit number for display/legacy purposes
+                                        let unitNumber = '';
+                                        Object.values(unitsStructure).forEach(units => {
+                                            const found = units.find(u => u.id.toString() === unitId);
+                                            if (found) unitNumber = found.block ? `${found.block} - ${found.number}` : found.number;
+                                        });
+                                        setFormData({ ...formData, unit_id: unitId, unit_number: unitNumber });
+                                    }}
+                                >
+                                    <option value="">Seleccionar Unidad...</option>
+                                    {Object.entries(unitsStructure as Record<string, any[]>).map(([block, units]) => (
+                                        <optgroup key={block} label={block}>
+                                            {units.map((unit: any) => (
+                                                <option key={unit.id} value={unit.id}>
+                                                    {unit.number}
+                                                </option>
+                                            ))}
+                                        </optgroup>
+                                    ))}
+                                </select>
                             </div>
                         </div>
 
@@ -265,7 +336,9 @@ export const ResidentForm: React.FC<ResidentFormProps> = ({ isOpen, onClose, onS
                                     value={formData.user_type}
                                     onChange={handleChange}
                                 >
-                                    <option value="resident">Residente</option>
+                                    <option value="resident">Residente en Alquiler</option>
+                                    <option value="propietario">Propietario</option>
+                                    <option value="residente_propietario">Residente Propietario</option>
                                     <option value="admin">Administrador</option>
                                     <option value="guard">Guarda de Seguridad</option>
                                 </select>
@@ -283,10 +356,11 @@ export const ResidentForm: React.FC<ResidentFormProps> = ({ isOpen, onClose, onS
             {showCamera && (
                 <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 p-4">
                     <FaceEnrollment
-                        onCapture={(descriptor, imageSrc) => {
+                        onCapture={async (descriptor, imageSrc) => {
+                            const optimizedImage = await resizeImage(imageSrc);
                             setFormData({
                                 ...formData,
-                                photo: imageSrc,
+                                photo: optimizedImage,
                                 biometric_descriptor: JSON.stringify(Array.from(descriptor))
                             } as any);
                             setShowCamera(false);

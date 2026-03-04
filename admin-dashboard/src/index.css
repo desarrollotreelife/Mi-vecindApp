@@ -4,6 +4,21 @@
 
 :root {
   color-scheme: light dark;
+  --color-primary-50: #f0fdf4;
+  --color-primary-100: #dcfce7;
+  --color-primary-500: #22c55e;
+  --color-primary-600: #16a34a;
+  --color-primary-900: #14532d;
+  --color-on-primary: #ffffff;
+}
+
+.dark {
+  --color-primary-50: #0f172a;
+  --color-primary-100: #1e293b;
+  --color-primary-500: #f8fafc;
+  --color-primary-600: #ffffff;
+  --color-primary-900: #e2e8f0;
+  --color-on-primary: #0f172a;
 }
 
 body {

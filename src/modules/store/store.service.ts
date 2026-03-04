@@ -8,6 +8,43 @@ export class StoreService {
         });
     }
 
+    async getCatalogProducts() {
+        return prisma.product.findMany({
+            where: { complex_id: null },
+            orderBy: { name: 'asc' }
+        });
+    }
+
+    async importFromCatalog(catalogProductId: number, complexId: number, initialStock: number) {
+        const catalogProduct = await prisma.product.findUnique({ where: { id: catalogProductId } });
+        if (!catalogProduct || catalogProduct.complex_id !== null) {
+            throw new Error('Producto de catálogo no encontrado');
+        }
+
+        const newSku = `${catalogProduct.sku}-${complexId}`;
+
+        const existing = await prisma.product.findFirst({
+            where: { complex_id: complexId, sku: newSku }
+        });
+
+        if (existing) {
+            throw new Error('Este producto ya fue importado a tu tienda.');
+        }
+
+        return prisma.product.create({
+            data: {
+                name: catalogProduct.name,
+                sku: newSku,
+                price: catalogProduct.price,
+                current_stock: initialStock,
+                min_stock: catalogProduct.min_stock,
+                category: catalogProduct.category,
+                image_url: catalogProduct.image_url,
+                complex_id: complexId
+            }
+        });
+    }
+
     async createProduct(data: any) {
         return prisma.product.create({
             data: {
@@ -21,7 +58,11 @@ export class StoreService {
         });
     }
 
-    async updateProduct(id: number, data: any) {
+    async updateProduct(id: number, complexId: number, data: any) {
+        const product = await prisma.product.findUnique({ where: { id } });
+        if (!product || product.complex_id !== complexId) {
+            throw new Error('Producto no encontrado o acceso denegado');
+        }
         return prisma.product.update({
             where: { id },
             data
@@ -29,11 +70,13 @@ export class StoreService {
     }
 
     // --- Shift Management ---
-    async getCurrentShift(userId: number) {
+    async getCurrentShift(userId: number, complexId: number) {
+        // Find open shift specifically for this user and complex
+        const user = await prisma.user.findUnique({ where: { id: userId } });
+        if (!user || user.complex_id !== complexId) throw new Error('Usuario no autorizado para este conjunto');
+
         return (prisma as any).cashShift.findFirst({
             where: {
-                // For simplified logic, assume one shift per user or global? 
-                // Let's allow multiple users to have shifts, but check if THIS user has one open.
                 user_id: userId,
                 status: 'open'
             },
@@ -41,8 +84,8 @@ export class StoreService {
         });
     }
 
-    async openShift(userId: number, initialAmount: number) {
-        const existing = await this.getCurrentShift(userId);
+    async openShift(userId: number, complexId: number, initialAmount: number) {
+        const existing = await this.getCurrentShift(userId, complexId);
         if (existing) throw new Error('Ya tienes un turno de caja abierto');
 
         return (prisma as any).cashShift.create({
@@ -54,8 +97,8 @@ export class StoreService {
         });
     }
 
-    async closeShift(userId: number, finalAmount: number, notes?: string) {
-        const shift = await this.getCurrentShift(userId);
+    async closeShift(userId: number, complexId: number, finalAmount: number, notes?: string) {
+        const shift = await this.getCurrentShift(userId, complexId);
         if (!shift) throw new Error('No tienes un turno abierto');
 
         // Calculate expected amount
@@ -82,7 +125,8 @@ export class StoreService {
         // Validation: Needs open shift if valid userId provided (and if we enforce it)
         let shiftId = null;
         if (userId) {
-            const shift = await this.getCurrentShift(userId);
+            if (!complexId) throw new Error('Operación requiere conjunto asignado');
+            const shift = await this.getCurrentShift(userId, complexId);
             if (!shift) throw new Error('Debes abrir caja para realizar ventas');
             shiftId = shift.id;
         }
@@ -98,7 +142,10 @@ export class StoreService {
             }
         }
 
-        // Transaction: Create Sale -> Create Items -> Update Stock
+        // Import WalletService dynamically or at the top
+        const { WalletService } = require('../finance/wallet.service');
+
+        // Transaction: Create Sale -> Create Items -> Update Stock -> Deduct Wallet (if applicable)
         return prisma.$transaction(async (tx: any) => {
             // 1. Calculate Total and Verify Stock
             let total = 0;
@@ -133,7 +180,30 @@ export class StoreService {
                 });
             }
 
-            // 2. Create Sale
+            // 2. Pay using Wallet if applicable
+            if (data.payment_method === 'account_balance' && data.resident_id) {
+                const wallet = await tx.wallet.findUnique({ where: { resident_id: data.resident_id } });
+                if (!wallet || wallet.balance < total) {
+                    throw new Error('Saldo insuficiente en la Billetera Virtual');
+                }
+
+                // Deduct balance and create transaction
+                await tx.wallet.update({
+                    where: { id: wallet.id },
+                    data: { balance: { decrement: total } }
+                });
+
+                await tx.walletTransaction.create({
+                    data: {
+                        wallet_id: wallet.id,
+                        amount: total,
+                        type: 'purchase',
+                        description: `Compra en tienda (${itemsToCreate.length} items)`
+                    }
+                });
+            }
+
+            // 3. Create Sale
             const saleData: any = {
                 resident_id: data.resident_id,
                 payment_method: data.payment_method || 'cash',

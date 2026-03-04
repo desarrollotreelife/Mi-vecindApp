@@ -48,7 +48,7 @@ export class ResidentsService {
         }));
     }
 
-    async createResident(data: any) {
+    async createResident(data: any, complexId?: number) {
         // Transactional creation
         return prisma.$transaction(async (tx: any) => {
             console.log('--- START CREATING RESIDENT ---');
@@ -59,7 +59,7 @@ export class ResidentsService {
             if (data.photo) {
                 try {
                     const filename = `resident_${data.email.split('@')[0]}`;
-                    photoUrl = fileStorage.savePhoto(data.photo, 'residentes', filename);
+                    photoUrl = await fileStorage.savePhoto(data.photo, 'residentes', filename);
                     console.log('Photo saved to:', photoUrl);
                 } catch (error) {
                     console.error('Error saving photo:', error);
@@ -87,7 +87,8 @@ export class ResidentsService {
                 const existingUnit = await tx.unit.findFirst({
                     where: {
                         number: number,
-                        ...(block ? { block: block } : {})
+                        block: block,
+                        complex_id: complexId || data.complex_id || null
                     }
                 });
 
@@ -101,7 +102,8 @@ export class ResidentsService {
                             type: 'apartment',
                             number: number,
                             block: block,
-                            coefficient: data.coefficient ? Number(data.coefficient) : 0
+                            coefficient: data.coefficient ? Number(data.coefficient) : 0,
+                            complex_id: complexId || data.complex_id || null
                         }
                     });
                     console.log('New unit created:', newUnit.id);
@@ -112,22 +114,29 @@ export class ResidentsService {
             if (!unitId) throw new Error('Unit identifier or number is required');
 
             // 2. Create User
-            console.log(`Checking user: ${data.email}`);
-            let user = await tx.user.findUnique({ where: { email: data.email } });
+            console.log(`Checking user document: ${data.document_num}`);
+            let user = await tx.user.findUnique({ where: { document_num: data.document_num } });
 
             if (!user) {
                 console.log('Creating new user...');
+
+                // Determine Role ID dynamically
+                let roleId = 3; // default: resident
+                if (data.type === 'admin' || data.user_type === 'admin') roleId = 2;
+                if (data.type === 'guard' || data.user_type === 'guard') roleId = 4;
+
                 user = await tx.user.create({
                     data: {
-                        email: data.email,
+                        email: data.email || null,
                         password_hash: data.password
                             ? await bcrypt.hash(data.password, 10)
-                            : '$2b$10$EpRnTzVlqHNP0.fKb.U/..t.Chq.GT/Oe', // Default hash if empty
+                            : '$2b$10$iD8IJb/c.djo7wCteiojEO0r1kINOC1SaFfN4nbMc8XRv2lgdwf.u', // Valid hash for '123456'
                         full_name: data.full_name,
-                        role_id: 3,
+                        role_id: roleId,
                         phone: data.phone,
                         document_num: data.document_num,
                         profile_photo: photoUrl,
+                        complex_id: complexId || data.complex_id || null
                     },
                 });
                 console.log('User created:', user.id);
@@ -158,7 +167,7 @@ export class ResidentsService {
         });
     }
 
-    async updateResident(id: number, data: any) {
+    async updateResident(id: number, data: any, complexId?: number) {
         return prisma.$transaction(async (tx: any) => {
             console.log(`--- UPDATING RESIDENT ${id} ---`);
             const resident = await tx.resident.findUnique({
@@ -189,14 +198,23 @@ export class ResidentsService {
                         }
 
                         const existingUnit = await tx.unit.findFirst({
-                            where: { number: number, block: block }
+                            where: {
+                                number: number,
+                                block: block,
+                                complex_id: complexId || resident.unit.complex_id
+                            }
                         });
 
                         if (existingUnit) {
                             unitId = existingUnit.id;
                         } else {
                             const newUnit = await tx.unit.create({
-                                data: { type: 'apartment', number, block }
+                                data: {
+                                    type: 'apartment',
+                                    number,
+                                    block,
+                                    complex_id: complexId || resident.unit.complex_id
+                                }
                             });
                             unitId = newUnit.id;
                         }
@@ -206,21 +224,13 @@ export class ResidentsService {
 
             // 2. Handle Photo Update
             let photoUrl = resident.user.profile_photo;
-            console.log('Current Photo URL:', photoUrl);
-            console.log('New Photo Data Length:', data.photo ? data.photo.length : 0);
-            console.log('Is Base64:', data.photo && data.photo.startsWith('data:image'));
-
             if (data.photo && data.photo !== photoUrl && data.photo.startsWith('data:image')) {
-                console.log('Attempting to save new photo...');
                 try {
                     const filename = `resident_${resident.user.email.split('@')[0]}`;
-                    photoUrl = fileStorage.savePhoto(data.photo, 'residentes', filename);
-                    console.log('Photo updated successfully:', photoUrl);
+                    photoUrl = await fileStorage.savePhoto(data.photo, 'residentes', filename);
                 } catch (error) {
                     console.error('Error updating photo:', error);
                 }
-            } else {
-                console.log('Skipping photo update.');
             }
 
             // 3. Update User
@@ -250,6 +260,22 @@ export class ResidentsService {
             });
 
             return updatedResident;
+        });
+    }
+
+    async deleteResident(id: number) {
+        return prisma.$transaction(async (tx: any) => {
+            const resident = await tx.resident.findUnique({
+                where: { id },
+                include: { user: true }
+            });
+
+            if (!resident) throw new Error('Resident not found');
+
+            // Delete resident record
+            await tx.resident.delete({ where: { id } });
+
+            return { message: 'Resident deleted successfully' };
         });
     }
 }

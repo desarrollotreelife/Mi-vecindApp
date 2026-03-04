@@ -2,7 +2,7 @@ import jwt from 'jsonwebtoken';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'default_secret';
 
-export const signToken = (payload: object, expiresIn = '1h') => {
+export const signToken = (payload: object, expiresIn = '24h') => {
     return jwt.sign(payload, JWT_SECRET, { expiresIn: expiresIn } as jwt.SignOptions);
 };
 

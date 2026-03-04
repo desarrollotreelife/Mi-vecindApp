@@ -36,3 +36,14 @@ export const getEpaycoData = async (req: Request, res: Response) => {
         res.status(400).json({ error: error.message });
     }
 };
+
+export const confirmPayment = async (req: Request, res: Response) => {
+    try {
+        // ePayco sends POST with PJSON data
+        const result = await service.confirmPayment(req.body);
+        res.json({ success: true, result });
+    } catch (error: any) {
+        console.error('[ePayco Error]', error.message);
+        res.status(400).json({ error: error.message });
+    }
+};

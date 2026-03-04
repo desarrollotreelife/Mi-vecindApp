@@ -39,6 +39,7 @@ export const createComplex = async (req: Request, res: Response) => {
                 await tx.user.create({
                     data: {
                         email: admin_email,
+                        document_num: admin_email, // fallback
                         password_hash: hashedPassword,
                         full_name: `Admin ${name}`,
                         role_id: 2, // admin

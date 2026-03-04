@@ -28,9 +28,10 @@ export class ParkingService {
         };
     }
 
-    async registerEntry(data: { slotId: number; plate: string; type: string }) {
+    async registerEntry(data: { slotId: number; plate: string; type: string; complexId: number }) {
         const slot = await prisma.parkingSlot.findUnique({ where: { id: data.slotId } });
         if (!slot) throw new Error('Celda no encontrada');
+        if (slot.complex_id !== data.complexId) throw new Error('Acceso denegado a esta celda');
         if (slot.is_occupied) throw new Error('Celda ocupada');
         if (slot.type === 'resident' && !slot.unit_id) throw new Error('Celda de residentes sin asignar');
 
@@ -59,7 +60,10 @@ export class ParkingService {
         });
     }
 
-    async registerExit(slotId: number) {
+    async registerExit(slotId: number, complexId: number) {
+        const slot = await prisma.parkingSlot.findUnique({ where: { id: slotId } });
+        if (!slot || slot.complex_id !== complexId) throw new Error('Celda no encontrada o acceso denegado');
+
         const activeUsage = await prisma.parkingUsage.findFirst({
             where: { slot_id: slotId, exit_time: null }
         });
@@ -81,13 +85,14 @@ export class ParkingService {
         });
     }
 
-    async assignSlot(slotId: number, unitId: number | null) {
-        // Validate if unit and slot are in same complex?
+    async assignSlot(slotId: number, unitId: number | null, complexId: number) {
+        const slot = await prisma.parkingSlot.findUnique({ where: { id: slotId } });
+        if (!slot || slot.complex_id !== complexId) throw new Error('Celda no encontrada o acceso denegado');
+
         if (unitId) {
             const unit = await prisma.unit.findUnique({ where: { id: unitId } });
-            const slot = await prisma.parkingSlot.findUnique({ where: { id: slotId } });
-            if (unit && slot && unit.complex_id !== slot.complex_id) {
-                throw new Error('La unidad y la celda deben pertenecer al mismo conjunto');
+            if (!unit || unit.complex_id !== complexId) {
+                throw new Error('La unidad no existe o pertenece a otro conjunto');
             }
         }
 
@@ -112,14 +117,18 @@ export class ParkingService {
         });
     }
 
-    async deleteSlot(id: number) {
-        // Check for active usage
+    async deleteSlot(id: number, complexId: number) {
         const slot = await prisma.parkingSlot.findUnique({ where: { id } });
-        if (slot?.is_occupied) throw new Error('No se puede eliminar una celda ocupada');
+        if (!slot || slot.complex_id !== complexId) throw new Error('Celda no encontrada o acceso denegado');
+        if (slot.is_occupied) throw new Error('No se puede eliminar una celda ocupada');
+
         return prisma.parkingSlot.delete({ where: { id } });
     }
 
-    async updateSlot(id: number, data: { code?: string, type?: string }) {
+    async updateSlot(id: number, complexId: number, data: { code?: string, type?: string }) {
+        const slot = await prisma.parkingSlot.findUnique({ where: { id } });
+        if (!slot || slot.complex_id !== complexId) throw new Error('Celda no encontrada o acceso denegado');
+
         return prisma.parkingSlot.update({
             where: { id },
             data: {

@@ -60,7 +60,7 @@ export const Navbar: React.FC<NavbarProps> = ({ sidebarOpen, setSidebarOpen }) =
                             {user?.complex?.name || 'Panel Administrativo'}
                         </h2>
                         {user?.complex?.name && (
-                            <span className="text-xs text-slate-500 font-medium">Gestión Residencial</span>
+                            <span className="text-xs text-slate-500 font-medium">Mi VecindApp</span>
                         )}
                     </div>
                 </div>

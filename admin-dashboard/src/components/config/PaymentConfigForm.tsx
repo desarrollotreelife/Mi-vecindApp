@@ -13,7 +13,9 @@ export const PaymentConfigForm: React.FC = () => {
         epayco_private_key: '',
         epayco_p_cust_id: '',
         epayco_p_key: '',
-        is_payment_active: false
+        is_payment_active: false,
+        billing_day: 1,
+        base_admin_fee: 0
     });
 
     useEffect(() => {
@@ -28,7 +30,8 @@ export const PaymentConfigForm: React.FC = () => {
                 setFormData(prev => ({
                     ...prev,
                     ...res.data,
-                    epayco_private_key: '' // Don't show existing private key for security
+                    epayco_private_key: '', // Don't show existing private key for security
+                    base_admin_fee: Number(res.data.base_admin_fee) || 0
                 }));
             }
         } catch (error) {
@@ -158,6 +161,42 @@ export const PaymentConfigForm: React.FC = () => {
                                 className="w-full rounded-lg border-slate-300 focus:border-blue-500 focus:ring-blue-500 bg-slate-50"
                             />
                             <p className="text-xs text-slate-500 mt-1">Solo ingrésalo si deseas actualizarlo.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-slate-100">
+                    <div className="space-y-4">
+                        <h3 className="font-medium text-slate-900 border-b pb-2">Automatización de Facturación</h3>
+
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">Monto Base de Administración (Total Conjunto)</label>
+                            <div className="relative">
+                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">$</span>
+                                <input
+                                    type="number"
+                                    name="base_admin_fee"
+                                    value={formData.base_admin_fee}
+                                    onChange={handleChange}
+                                    className="w-full pl-8 rounded-lg border-slate-300 focus:border-blue-500 focus:ring-blue-500"
+                                    placeholder="Ej: 50000000"
+                                />
+                            </div>
+                            <p className="text-xs text-slate-500 mt-1">Este valor se multiplicará por el coeficiente de cada unidad.</p>
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">Día de Facturación Mensual</label>
+                            <input
+                                type="number"
+                                name="billing_day"
+                                min="1"
+                                max="28"
+                                value={formData.billing_day}
+                                onChange={handleChange}
+                                className="w-full rounded-lg border-slate-300 focus:border-blue-500 focus:ring-blue-500"
+                            />
+                            <p className="text-xs text-slate-500 mt-1">Día del mes en que se generarán automáticamente las cuentas de cobro.</p>
                         </div>
                     </div>
                 </div>

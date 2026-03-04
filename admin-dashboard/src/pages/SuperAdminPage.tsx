@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Building2, Plus, Power, Trash2, Search, MoreHorizontal } from 'lucide-react';
+import { Building2, Plus, Power, Search, Shield, Settings } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import api from '../services/api';
 import toast from 'react-hot-toast';
+import { ModuleConfigModal } from '../components/superadmin/ModuleConfigModal';
 
 export const SuperAdminPage: React.FC = () => {
     const [complexes, setComplexes] = useState<any[]>([]);
@@ -13,7 +14,8 @@ export const SuperAdminPage: React.FC = () => {
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [newComplex, setNewComplex] = useState({
         name: '', nit: '', address: '', city: '',
-        admin_email: '', admin_password: '', plan_type: 'standard'
+        admin_email: '', admin_password: '', plan_type: 'standard',
+        deletion_passcode: ''
     });
 
     // Payment Modal
@@ -21,15 +23,47 @@ export const SuperAdminPage: React.FC = () => {
     const [selectedComplex, setSelectedComplex] = useState<any>(null);
     const [paymentData, setPaymentData] = useState({ amount: 0, method: 'transfer', reference: '' });
 
+    // Module Config Modal
+    const [isModuleOpen, setIsModuleOpen] = useState(false);
+
     const fetchComplexes = async () => {
         try {
+            console.log('Fetching complexes...');
             const response = await api.get('/super-admin/complexes');
+            console.log('Complexes fetched:', response.data);
             setComplexes(response.data);
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error fetching complexes:', error);
-            // toast.error('Error al cargar lista');
+            const msg = error.response?.data?.error || 'No se pudo conectar con el servidor';
+            toast.error(`Error: ${msg}`);
         } finally {
             setLoading(false);
+        }
+    };
+
+    // Edit Passcode Modal
+    const [isPasscodeOpen, setIsPasscodeOpen] = useState(false);
+    const [passcodeData, setPasscodeData] = useState({ id: 0, code: '' });
+
+    const openPasscodeModal = (complex: any) => {
+        setPasscodeData({ id: complex.id, code: complex.deletion_passcode || '' });
+        setIsPasscodeOpen(true);
+    };
+
+    const openModuleModal = (complex: any) => {
+        setSelectedComplex(complex);
+        setIsModuleOpen(true);
+    };
+
+    const handleUpdatePasscode = async (e: React.FormEvent) => {
+        e.preventDefault();
+        try {
+            await api.patch(`/super-admin/complexes/${passcodeData.id}`, { deletion_passcode: passcodeData.code });
+            setIsPasscodeOpen(false);
+            fetchComplexes();
+            toast.success('Código de seguridad actualizado');
+        } catch (error: any) {
+            toast.error('Error al actualizar código');
         }
     };
 
@@ -42,7 +76,7 @@ export const SuperAdminPage: React.FC = () => {
         try {
             await api.post('/super-admin/complexes', newComplex);
             setIsFormOpen(false);
-            setNewComplex({ name: '', nit: '', address: '', city: '', admin_email: '', admin_password: '', plan_type: 'standard' });
+            setNewComplex({ name: '', nit: '', address: '', city: '', admin_email: '', admin_password: '', plan_type: 'standard', deletion_passcode: '' } as any);
             fetchComplexes();
             toast.success('Conjunto creado exitosamente');
         } catch (error: any) {
@@ -131,71 +165,106 @@ export const SuperAdminPage: React.FC = () => {
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
-                        {filteredComplexes.map(complex => {
-                            const isPastDue = complex.billing_due_date && new Date(complex.billing_due_date) < new Date();
-                            return (
-                                <tr key={complex.id} className="group hover:bg-slate-50 transition-colors">
-                                    <td className="px-6 py-4">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center text-slate-500 group-hover:bg-white group-hover:shadow-sm transition-all border border-transparent group-hover:border-slate-200">
-                                                <Building2 size={20} />
+                        {filteredComplexes.length > 0 ? (
+                            filteredComplexes.map(complex => {
+                                const isPastDue = complex.billing_due_date && new Date(complex.billing_due_date) < new Date();
+                                return (
+                                    <tr key={complex.id} className="group hover:bg-slate-50 transition-colors">
+                                        <td className="px-6 py-4">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center text-slate-500 group-hover:bg-white group-hover:shadow-sm transition-all border border-transparent group-hover:border-slate-200">
+                                                    <Building2 size={20} />
+                                                </div>
+                                                <div>
+                                                    <div className="font-semibold text-slate-900">{complex.name}</div>
+                                                    <div className="text-xs text-slate-500 font-mono mt-0.5">{complex.nit || 'NIT Pendiente'}</div>
+                                                </div>
                                             </div>
-                                            <div>
-                                                <div className="font-semibold text-slate-900">{complex.name}</div>
-                                                <div className="text-xs text-slate-500 font-mono mt-0.5">{complex.nit || 'NIT Pendiente'}</div>
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <div className="text-sm font-medium text-slate-700 capitalize">{complex.plan_type || 'Standard'}</div>
+                                            <div className={`text-xs mt-0.5 ${complex.subscription_status === 'active' ? 'text-emerald-600' : 'text-red-500'}`}>
+                                                {complex.subscription_status === 'active' ? 'Al día' : 'Mora / Pendiente'}
                                             </div>
-                                        </div>
-                                    </td>
-                                    <td className="px-6 py-4">
-                                        <div className="text-sm font-medium text-slate-700 capitalize">{complex.plan_type || 'Standard'}</div>
-                                        <div className={`text-xs mt-0.5 ${complex.subscription_status === 'active' ? 'text-emerald-600' : 'text-red-500'}`}>
-                                            {complex.subscription_status === 'active' ? 'Al día' : 'Mora / Pendiente'}
-                                        </div>
-                                    </td>
-                                    <td className="px-6 py-4">
-                                        <div className={`text-sm font-mono ${isPastDue ? 'text-red-600 font-bold' : 'text-slate-600'}`}>
-                                            {complex.billing_due_date ? new Date(complex.billing_due_date).toLocaleDateString() : '-'}
-                                        </div>
-                                        {isPastDue && (
-                                            <span className="text-[10px] bg-red-100 text-red-700 px-1.5 py-0.5 rounded uppercase font-bold tracking-wide">Vencido</span>
-                                        )}
-                                    </td>
-                                    <td className="px-6 py-4">
-                                        <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold border ${complex.is_active
-                                            ? 'bg-emerald-50 text-emerald-700 border-emerald-100'
-                                            : 'bg-slate-50 text-slate-600 border-slate-200'
-                                            }`}>
-                                            <span className={`w-1.5 h-1.5 rounded-full ${complex.is_active ? 'bg-emerald-500' : 'bg-slate-400'}`}></span>
-                                            {complex.is_active ? 'Activo' : 'Suspendido'}
-                                        </div>
-                                    </td>
-                                    <td className="px-6 py-4 text-right">
-                                        <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <button
-                                                onClick={() => openPaymentModal(complex)}
-                                                className="p-2 rounded-lg hover:bg-blue-50 text-slate-400 hover:text-blue-600 transition-colors"
-                                                title="Registrar Pago"
-                                            >
-                                                <span className="font-bold text-xs">$</span>
-                                            </button>
-                                            <button
-                                                onClick={() => toggleStatus(complex.id, complex.is_active, complex.name)}
-                                                className={`p-2 rounded-lg transition-all ${complex.is_active
-                                                    ? 'hover:bg-red-50 text-slate-400 hover:text-red-600'
-                                                    : 'hover:bg-emerald-50 text-slate-400 hover:text-emerald-600'
-                                                    }`}
-                                                title={complex.is_active ? 'Suspender Servicio (Kill Switch)' : 'Reactivar Servicio'}
-                                            >
-                                                <Power size={18} />
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            );
-                        })}
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <div className={`text-sm font-mono ${isPastDue ? 'text-red-600 font-bold' : 'text-slate-600'}`}>
+                                                {complex.billing_due_date ? new Date(complex.billing_due_date).toLocaleDateString() : '-'}
+                                            </div>
+                                            {isPastDue && (
+                                                <span className="text-[10px] bg-red-100 text-red-700 px-1.5 py-0.5 rounded uppercase font-bold tracking-wide">Vencido</span>
+                                            )}
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold border ${complex.is_active
+                                                ? 'bg-emerald-50 text-emerald-700 border-emerald-100'
+                                                : 'bg-slate-50 text-slate-600 border-slate-200'
+                                                }`}>
+                                                <span className={`w-1.5 h-1.5 rounded-full ${complex.is_active ? 'bg-emerald-500' : 'bg-slate-400'}`}></span>
+                                                {complex.is_active ? 'Activo' : 'Suspendido'}
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-4 text-right">
+                                            <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <button
+                                                    onClick={() => openModuleModal(complex)}
+                                                    className="p-2 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-primary-600 transition-colors"
+                                                    title="Configurar Módulos"
+                                                >
+                                                    <Settings size={18} />
+                                                </button>
+                                                <button
+                                                    onClick={() => openPaymentModal(complex)}
+                                                    className="p-2 rounded-lg hover:bg-blue-50 text-slate-400 hover:text-blue-600 transition-colors"
+                                                    title="Registrar Pago"
+                                                >
+                                                    <span className="font-bold text-xs">$</span>
+                                                </button>
+                                                <button
+                                                    onClick={() => openPasscodeModal(complex)}
+                                                    className="p-2 rounded-lg hover:bg-indigo-50 text-slate-400 hover:text-indigo-600 transition-colors"
+                                                    title="Configurar Código de Seguridad"
+                                                >
+                                                    <Shield size={18} />
+                                                </button>
+                                                <button
+                                                    onClick={() => toggleStatus(complex.id, complex.is_active, complex.name)}
+                                                    className={`p-2 rounded-lg transition-all ${complex.is_active
+                                                        ? 'hover:bg-red-50 text-slate-400 hover:text-red-600'
+                                                        : 'hover:bg-emerald-50 text-slate-400 hover:text-emerald-600'
+                                                        }`}
+                                                    title={complex.is_active ? 'Suspender Servicio (Kill Switch)' : 'Reactivar Servicio'}
+                                                >
+                                                    <Power size={18} />
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                );
+                            })
+                        ) : (
+                            <tr>
+                                <td colSpan={5} className="px-6 py-12 text-center text-slate-400">
+                                    <div className="flex flex-col items-center gap-2">
+                                        <Building2 size={48} className="opacity-20" />
+                                        <p>No se encontraron clientes registrados.</p>
+                                        <Button variant="ghost" size="sm" onClick={fetchComplexes} className="mt-2">
+                                            Reintentar cargar
+                                        </Button>
+                                    </div>
+                                </td>
+                            </tr>
+                        )}
                     </tbody>
                 </table>
             </div>
+
+            <ModuleConfigModal
+                isOpen={isModuleOpen}
+                onClose={() => setIsModuleOpen(false)}
+                complex={selectedComplex}
+                onSuccess={fetchComplexes}
+            />
 
             {/* Create Complex Modal */}
             {isFormOpen && (
@@ -212,6 +281,10 @@ export const SuperAdminPage: React.FC = () => {
                                 <input className="w-full border p-2 rounded" type="email" placeholder="Email Admin" value={newComplex.admin_email} onChange={e => setNewComplex({ ...newComplex, admin_email: e.target.value })} required />
                                 <input className="w-full border p-2 rounded" type="password" placeholder="Contraseña" value={newComplex.admin_password} onChange={e => setNewComplex({ ...newComplex, admin_password: e.target.value })} required />
                             </section>
+                            <div>
+                                <label className="text-xs font-bold text-slate-500">Código de Seguridad (Borrados)</label>
+                                <input className="w-full border p-2 rounded" placeholder="Ej: 9988" value={newComplex.deletion_passcode} onChange={e => setNewComplex({ ...newComplex, deletion_passcode: e.target.value })} />
+                            </div>
                             <div className="flex justify-end gap-2 mt-4">
                                 <Button variant="ghost" type="button" onClick={() => setIsFormOpen(false)}>Cancelar</Button>
                                 <Button type="submit">Crear</Button>
@@ -253,6 +326,38 @@ export const SuperAdminPage: React.FC = () => {
                             <div className="flex justify-end gap-2 mt-4">
                                 <Button variant="ghost" type="button" onClick={() => setIsPaymentOpen(false)}>Cancelar</Button>
                                 <Button type="submit">Confirmar Pago</Button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* Deletion Passcode Modal */}
+            {isPasscodeOpen && (
+                <div className="fixed inset-0 bg-slate-900/20 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                    <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl">
+                        <div className="flex items-center gap-2 mb-4 text-indigo-600">
+                            <Shield size={20} />
+                            <h2 className="text-lg font-bold text-slate-900">Código de Seguridad</h2>
+                        </div>
+                        <p className="text-sm text-slate-500 mb-4">
+                            Este código será requerido para borrar cualquier dato permanentemente en este conjunto.
+                        </p>
+
+                        <form onSubmit={handleUpdatePasscode} className="space-y-4">
+                            <div>
+                                <label className="text-xs font-bold text-slate-500">Nuevo Código</label>
+                                <input
+                                    type="text"
+                                    className="w-full border p-2 rounded text-center text-2xl font-mono tracking-widest"
+                                    value={passcodeData.code}
+                                    onChange={e => setPasscodeData({ ...passcodeData, code: e.target.value })}
+                                    required
+                                />
+                            </div>
+                            <div className="flex justify-end gap-2 mt-4">
+                                <Button variant="ghost" type="button" onClick={() => setIsPasscodeOpen(false)}>Cancelar</Button>
+                                <Button type="submit">Actualizar Código</Button>
                             </div>
                         </form>
                     </div>

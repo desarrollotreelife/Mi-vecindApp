@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Car, Building, Plus, Trash2, Settings, Filter, Edit, Users, Grid, List } from 'lucide-react';
+import { Car, Plus, Trash2, Settings, Edit, Users, Grid } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';

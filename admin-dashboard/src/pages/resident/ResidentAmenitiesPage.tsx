@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Users, Clock, Calendar, CheckCircle, XCircle, Clock as ClockIcon, Plus } from 'lucide-react';
+import { Users, Calendar, XCircle } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
 import { Card } from '../../components/ui/Card';
@@ -23,9 +23,8 @@ export const ResidentAmenitiesPage: React.FC = () => {
     const fetchData = async () => {
         setLoading(true);
         try {
-            const [amenRes, bookRes] = await Promise.all([
+            const [amenRes] = await Promise.all([
                 api.get('/amenities'),
-                api.get('/bookings?status=pending') // TODO: Need 'my bookings' endpoint or filter by user in frontend for MVP
             ]);
             setAmenities(amenRes.data);
 

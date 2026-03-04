@@ -1,16 +1,22 @@
 import { Router } from 'express';
 import { getAmenities, createBooking, createAmenity, listBookings, approveBooking, rejectBooking, updateAmenity } from './amenities.controller';
-import { authenticate } from '../../core/auth.middleware';
+import { authenticate, authorize } from '../../core/auth.middleware';
 
 const router = Router();
 
-router.get('/', getAmenities); // TODO: Re-enable authenticate
-router.post('/', createAmenity); // TODO: Re-enable authenticate (Admin only)
-// TODO: Re-enable authenticate
-router.post('/book', createBooking);
-router.get('/bookings', listBookings);
-router.post('/bookings/:id/approve', approveBooking);
-router.post('/bookings/:id/reject', rejectBooking);
-router.put('/:id', updateAmenity); // Admin only IRL
+router.use(authenticate);
+
+// List amenities available to all residents/guards/admins
+router.get('/', getAmenities);
+
+// Management (Admin only)
+router.post('/', authorize(['admin']), createAmenity);
+router.put('/:id', authorize(['admin']), updateAmenity);
+
+// Bookings
+router.post('/book', authorize(['resident', 'admin']), createBooking);
+router.get('/bookings', authorize(['admin', 'guard', 'resident']), listBookings);
+router.post('/bookings/:id/approve', authorize(['admin']), approveBooking);
+router.post('/bookings/:id/reject', authorize(['admin']), rejectBooking);
 
 export default router;

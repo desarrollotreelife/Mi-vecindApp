@@ -22,7 +22,7 @@ export class VisitsService {
         if (data.photo) {
             try {
                 const filename = `visitor_${data.document_num || Date.now()}`;
-                photoUrl = fileStorage.savePhoto(data.photo, 'visitantes', filename);
+                photoUrl = await fileStorage.savePhoto(data.photo, 'visitantes', filename);
             } catch (error) {
                 console.error('Error saving visitor photo:', error);
             }
@@ -180,5 +180,39 @@ export class VisitsService {
                 photo_url: visit.visitor.photo_url
             }
         };
+    }
+
+    async configurePermanentVisitor(visitorId: number, config: {
+        is_permanent: boolean;
+        allowed_days?: string;
+        allowed_time_start?: string;
+        allowed_time_end?: string;
+        photo?: string;
+    }) {
+        let biometricDesc = null;
+        let photoUrl = undefined;
+
+        if (config.photo) {
+            try {
+                const filename = `visitor_biometric_${visitorId}_${Date.now()}`;
+                photoUrl = await fileStorage.savePhoto(config.photo, 'visitantes', filename);
+                // Simulate generating a biometric descriptor from the photo
+                biometricDesc = `face_hash_${Math.random().toString(36).substring(7)}`;
+            } catch (error) {
+                console.error('Error processing permanent visitor photo:', error);
+            }
+        }
+
+        return prisma.visitor.update({
+            where: { id: visitorId },
+            data: {
+                is_permanent: config.is_permanent,
+                allowed_days: config.allowed_days,
+                allowed_time_start: config.allowed_time_start,
+                allowed_time_end: config.allowed_time_end,
+                ...(photoUrl && { photo_url: photoUrl }),
+                ...(biometricDesc && { biometric_descriptor: biometricDesc })
+            }
+        });
     }
 }

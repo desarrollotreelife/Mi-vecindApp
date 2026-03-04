@@ -9,12 +9,13 @@ export default {
         extend: {
             colors: {
                 primary: {
-                    50: '#f0fdf4',
-                    100: '#dcfce7',
-                    500: '#22c55e',
-                    600: '#16a34a',
-                    900: '#14532d',
+                    50: 'var(--color-primary-50)',
+                    100: 'var(--color-primary-100)',
+                    500: 'var(--color-primary-500)',
+                    600: 'var(--color-primary-600)',
+                    900: 'var(--color-primary-900)',
                 },
+                'on-primary': 'var(--color-on-primary)',
                 dark: {
                     900: '#0f172a', // Slate 900
                     800: '#1e293b', // Slate 800

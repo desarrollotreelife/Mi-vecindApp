@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, useState } from 'react';
 import Webcam from 'react-webcam';
-import { Scan, AlertTriangle } from 'lucide-react';
+import { Scan } from 'lucide-react';
 import Tesseract from 'tesseract.js';
 
 interface LPRViewProps {
@@ -18,7 +18,7 @@ export const LPRView: React.FC<LPRViewProps> = ({ deviceId, onPlateDetected }) =
     useEffect(() => {
         if (!deviceId) return;
 
-        let intervalId: NodeJS.Timer;
+        let intervalId: any;
         const scanPlate = async () => {
             if (!webcamRef.current || scanning) return;
 
@@ -32,7 +32,7 @@ export const LPRView: React.FC<LPRViewProps> = ({ deviceId, onPlateDetected }) =
                     imageSrc,
                     'eng', // English is usually fine for alphanumeric plates
                     {
-                        logger: m => { } // detailed logs disabled for performance
+                        logger: () => { } // detailed logs disabled for performance
                     }
                 );
 

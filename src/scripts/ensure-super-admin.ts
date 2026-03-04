@@ -12,8 +12,7 @@ async function upsertSuperAdmin() {
         console.log('Autocreating super_admin role...');
         role = await prisma.role.create({
             data: {
-                name: 'super_admin',
-                description: 'Global Administrator'
+                name: 'super_admin'
             }
         });
     }
@@ -36,6 +35,7 @@ async function upsertSuperAdmin() {
         },
         create: {
             email,
+            document_num: email, // fallback
             password_hash: hashedPassword,
             full_name: 'Super Admin',
             role_id: role.id,

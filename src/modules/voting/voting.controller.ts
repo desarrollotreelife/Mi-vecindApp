@@ -49,7 +49,7 @@ export const castVote = async (req: Request, res: Response) => {
             // return res.status(400).json({ error: 'Unit has invalid coefficient' });
         }
 
-        const result = await votingService.castVote(userId, topicId, choice, coefficient, unitId);
+        const result = await votingService.castVote(userId, topicId, choice, coefficient, unitId, resident.id);
         res.status(201).json(result);
     } catch (error: any) {
         res.status(400).json({ error: error.message });
@@ -66,6 +66,38 @@ export const updateSessionStatus = async (req: Request, res: Response) => {
         else if (status === 'closed') result = await votingService.closeSession(id);
         else return res.status(400).json({ error: 'Invalid status' });
 
+        res.json(result);
+    } catch (error: any) {
+        res.status(400).json({ error: error.message });
+    }
+};
+
+export const getAttendance = async (req: Request, res: Response) => {
+    try {
+        const id = Number(req.params.id);
+        const result = await votingService.getAttendance(id);
+        res.json(result);
+    } catch (error: any) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+export const addAttendance = async (req: Request, res: Response) => {
+    try {
+        const id = Number(req.params.id);
+        const { residentId } = req.body;
+        const result = await votingService.addAttendance(id, residentId);
+        res.status(201).json(result);
+    } catch (error: any) {
+        res.status(400).json({ error: error.message });
+    }
+};
+
+export const removeAttendance = async (req: Request, res: Response) => {
+    try {
+        const id = Number(req.params.id);
+        const residentId = Number(req.params.residentId);
+        const result = await votingService.removeAttendance(id, residentId);
         res.json(result);
     } catch (error: any) {
         res.status(400).json({ error: error.message });

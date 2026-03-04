@@ -9,6 +9,7 @@ export class AuthService {
         const user = await prisma.user.create({
             data: {
                 email: data.email,
+                document_num: data.document_num || data.email, // fallback
                 password_hash: hashedPassword,
                 full_name: data.full_name,
                 role_id: data.role_id,
@@ -23,12 +24,12 @@ export class AuthService {
 
     async login(data: any) {
         const user = await prisma.user.findUnique({
-            where: { email: data.email },
+            where: { document_num: data.document_num },
             include: {
                 role: true,
                 resident: true,
                 complex: {
-                    select: { name: true, logo_url: true }
+                    select: { name: true, logo_url: true, active_modules: true }
                 }
             },
         });

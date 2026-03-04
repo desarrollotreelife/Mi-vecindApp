@@ -41,6 +41,7 @@ async function main() {
     const userA = await prisma.user.create({
         data: {
             email: `adminA_${suffix}@test.com`,
+            document_num: `adminA_${suffix}`,
             password_hash: passwordHash,
             full_name: 'Admin Complex A',
             role_id: adminRole.id,
@@ -51,6 +52,7 @@ async function main() {
     const userB = await prisma.user.create({
         data: {
             email: `adminB_${suffix}@test.com`,
+            document_num: `adminB_${suffix}`,
             password_hash: passwordHash,
             full_name: 'Admin Complex B',
             role_id: adminRole.id,

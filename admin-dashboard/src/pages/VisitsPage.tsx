@@ -149,7 +149,7 @@ export const VisitsPage: React.FC = () => {
                                         onKeyDown={(e) => e.key === 'Enter' && handleSimulateScan()}
                                         autoFocus
                                     />
-                                    <Button onClick={handleSimulateScan} className="bg-primary-600 hover:bg-primary-500 text-white px-6">
+                                    <Button onClick={handleSimulateScan} className="bg-primary-600 hover:bg-primary-500 text-on-primary px-6">
                                         VERIFICAR
                                     </Button>
                                 </div>

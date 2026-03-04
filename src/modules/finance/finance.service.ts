@@ -21,12 +21,15 @@ export class FinanceService {
         });
     }
 
-    async registerPayment(data: { billId: number, amount: number, method: string, reference?: string }) {
-        const bill = await prisma.bill.findUnique({ where: { id: data.billId } });
-        if (!bill) throw new Error('Cuenta de cobro no encontrada');
-        // Note: Payment registration usually comes from webhook or admin. 
-        // If admin, we should verify they own the bill's unit complex. 
-        // For MVP assuming bill ID knowledge implies access, but improved security would check complex match here too if context available.
+    async registerPayment(data: { billId: number, amount: number, method: string, reference?: string, complexId: number }) {
+        const bill = await prisma.bill.findUnique({
+            where: { id: data.billId },
+            include: { unit: true }
+        });
+
+        if (!bill || bill.unit.complex_id !== data.complexId) {
+            throw new Error('Cuenta de cobro no encontrada o acceso denegado');
+        }
 
         return await prisma.$transaction(async (tx) => {
             const payment = await tx.payment.create({
@@ -40,11 +43,29 @@ export class FinanceService {
             });
 
             // Update bill status if fully paid
-            // Ideally we check totals, but for MVP assuming full payment or simple logic
             await tx.bill.update({
                 where: { id: data.billId },
                 data: { status: 'paid' }
             });
+
+            // Loyalty Points Logic
+            // If it's an admin fee and paid before the 10th of the current month, award 50 points
+            if (bill.type === 'admin_fee') {
+                const today = new Date();
+                if (today.getDate() <= 10) {
+                    const resident = await tx.resident.findFirst({
+                        where: { unit_id: bill.unit_id }
+                    });
+
+                    if (resident) {
+                        await tx.resident.update({
+                            where: { id: resident.id },
+                            data: { loyalty_points: { increment: 50 } }
+                        });
+                        console.log(`🎉 50 Puntos de Lealtad otorgados al residente ${resident.id} por pago oportuno.`);
+                    }
+                }
+            }
 
             return payment;
         });
@@ -108,7 +129,7 @@ export class FinanceService {
     }
 
     async getFinancialSummary(complexId: number) {
-        // 1. Calculate Income (Sum of all payments linked to units in this complex)
+        // ... (existing code)
         const incomeResult = await prisma.payment.aggregate({
             _sum: { amount: true },
             where: {
@@ -118,13 +139,11 @@ export class FinanceService {
             }
         });
 
-        // 2. Calculate Expenses (Sum of specific complex expenses)
         const expenseResult = await prisma.expense.aggregate({
             _sum: { amount: true },
             where: { complex_id: complexId }
         });
 
-        // 3. Calculate Pending Receivables (Unpaid bills)
         const pendingResult = await prisma.bill.aggregate({
             _sum: { amount: true },
             where: {
@@ -138,10 +157,83 @@ export class FinanceService {
         const pending = Number(pendingResult._sum.amount || 0);
 
         return {
-            income: { total: income, trend: 0 }, // Trend requires historic comparison, skipping for MVP
-            expenses: { total: expenses, budget: 0 }, // Budget currently not in DB
-            reserve_fund: { total: income - expenses }, // Simple Cash Flow Balance
+            income: { total: income, trend: 0 },
+            expenses: { total: expenses, budget: 0 },
+            reserve_fund: { total: income - expenses },
             accounts_receivable: { total: pending }
         };
+    }
+
+    /**
+     * Generates monthly admin fee bills for all units in a complex
+     */
+    async generateMonthlyBills(complexId: number) {
+        const complex = await prisma.residentialComplex.findUnique({
+            where: { id: complexId },
+            include: { units: true }
+        });
+
+        if (!complex || Number(complex.base_admin_fee) <= 0) return;
+
+        const now = new Date();
+        const monthName = now.toLocaleString('es-ES', { month: 'long', year: 'numeric' });
+        const dueDate = new Date(now.getFullYear(), now.getMonth(), 15); // Default due date 15th
+
+        const results = await Promise.all(complex.units.map(async (unit) => {
+            // Calculate amount based on coefficient
+            const amount = Number(complex.base_admin_fee) * Number(unit.coefficient);
+
+            if (amount <= 0) return null;
+
+            // Check if bill already exists for this unit and month to avoid duplicates
+            const existingBill = await prisma.bill.findFirst({
+                where: {
+                    unit_id: unit.id,
+                    type: 'admin_fee',
+                    created_at: {
+                        gte: new Date(now.getFullYear(), now.getMonth(), 1),
+                        lt: new Date(now.getFullYear(), now.getMonth() + 1, 1)
+                    }
+                }
+            });
+
+            if (existingBill) return null;
+
+            return prisma.bill.create({
+                data: {
+                    unit_id: unit.id,
+                    type: 'admin_fee',
+                    amount: amount,
+                    description: `Cuota de Administración - ${monthName}`,
+                    due_date: dueDate,
+                    status: 'pending'
+                }
+            });
+        }));
+
+        return results.filter(r => r !== null);
+    }
+
+    /**
+     * Checks all complexes and generates bills if today is their billing day
+     */
+    async checkAndGenerateAllBills() {
+        const today = new Date().getDate();
+        const complexes = await prisma.residentialComplex.findMany({
+            where: { billing_day: today, is_active: true }
+        });
+
+        console.log(`[Billing] Verificando facturación para ${complexes.length} conjuntos hoy (Día ${today})`);
+
+        for (const complex of complexes) {
+            try {
+                const generated = await this.generateMonthlyBills(complex.id);
+                if (generated && generated.length > 0) {
+                    console.log(`[Billing] Generadas ${generated.length} facturas para ${complex.name}`);
+                }
+            } catch (error) {
+                console.error(`[Billing] Error generando facturas para ${complex.name}:`, error);
+            }
+        }
     }
 }

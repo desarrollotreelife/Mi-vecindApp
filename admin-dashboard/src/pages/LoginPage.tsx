@@ -5,7 +5,7 @@ import { Lock, User, ShieldCheck, KeyRound } from 'lucide-react';
 import api from '../services/api';
 
 export const LoginPage = () => {
-    const [email, setEmail] = useState('');
+    const [documentNum, setDocumentNum] = useState('');
     const [password, setPassword] = useState('');
     const [twoFactorCode, setTwoFactorCode] = useState('');
     const [is2FARequired, setIs2FARequired] = useState(false);
@@ -31,7 +31,7 @@ export const LoginPage = () => {
                 navigate('/');
             } else {
                 // Normal Login
-                const response = await api.post('/auth/login', { email, password });
+                const response = await api.post('/auth/login', { document_num: documentNum, password });
 
                 if (response.data.status === '2fa_required') {
                     setUserId(response.data.userId);
@@ -45,11 +45,14 @@ export const LoginPage = () => {
                 login(token, user);
 
                 const role = typeof user.role === 'string' ? user.role : user.role?.name || '';
-                console.log('Login Success. Role:', role);
+                const lowerRole = role.toLowerCase().trim();
+                console.log('Login Success. Role:', lowerRole);
 
-                if (['guard', 'vigilante'].includes(role.toLowerCase())) {
+                if (lowerRole === 'superadmin') {
+                    navigate('/super-admin');
+                } else if (['guard', 'vigilante'].includes(lowerRole)) {
                     navigate('/access-terminal');
-                } else if (role.toLowerCase() === 'resident') {
+                } else if (lowerRole === 'resident') {
                     navigate('/resident');
                 } else {
                     navigate('/');
@@ -70,14 +73,14 @@ export const LoginPage = () => {
             <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col md:flex-row">
                 <div className="w-full p-8 md:p-10">
                     <div className="text-center mb-8">
-                        <div className="w-16 h-16 bg-blue-100/50 rounded-2xl flex items-center justify-center mx-auto mb-4 text-blue-600">
+                        <div className="w-16 h-16 bg-primary-100/50 rounded-2xl flex items-center justify-center mx-auto mb-4 text-primary-600">
                             <ShieldCheck size={32} />
                         </div>
                         <h1 className="text-2xl font-bold text-slate-800">
                             {is2FARequired ? 'Verificación de Seguridad' : 'Bienvenido de Nuevo'}
                         </h1>
                         <p className="text-slate-500 mt-2">
-                            {is2FARequired ? 'Ingrese el código de 6 dígitos enviado.' : 'Sistema de Gestión Residencial'}
+                            {is2FARequired ? 'Ingrese el código de 6 dígitos enviado.' : 'Mi VecindApp'}
                         </p>
                     </div>
 
@@ -85,15 +88,15 @@ export const LoginPage = () => {
                         {!is2FARequired ? (
                             <>
                                 <div>
-                                    <label className="block text-sm font-medium text-slate-700 mb-2">Usuario / ID</label>
+                                    <label className="block text-sm font-medium text-slate-700 mb-2">Número de Documento (Cédula)</label>
                                     <div className="relative">
                                         <User className="absolute left-3 top-3 text-slate-400" size={18} />
                                         <input
                                             type="text"
-                                            value={email}
-                                            onChange={(e) => setEmail(e.target.value)}
+                                            value={documentNum}
+                                            onChange={(e) => setDocumentNum(e.target.value)}
                                             className="block w-full pl-10 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-blue-500"
-                                            placeholder="Nombre de usuario"
+                                            placeholder="Ingrese su número de documento"
                                             required
                                         />
                                     </div>
@@ -141,7 +144,7 @@ export const LoginPage = () => {
                         <button
                             type="submit"
                             disabled={loading}
-                            className="w-full bg-blue-600 text-white py-2.5 rounded-lg hover:bg-blue-700 font-medium transition-all shadow-lg shadow-blue-500/30 disabled:opacity-50"
+                            className="w-full bg-primary-600 text-on-primary py-2.5 rounded-lg hover:bg-primary-700 font-medium transition-all shadow-lg shadow-primary-500/30 disabled:opacity-50"
                         >
                             {loading ? 'Verificando...' : (is2FARequired ? 'Verificar Código' : 'Iniciar Sesión')}
                         </button>

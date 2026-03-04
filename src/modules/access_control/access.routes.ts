@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { recordAccess, getLogs } from './access.controller';
+import { recordAccess, getLogs, handleLPRWebhook } from './access.controller';
 import { authenticate } from '../../core/auth.middleware';
 
 const router = Router();
@@ -8,5 +8,8 @@ const router = Router();
 // Protected by auth (Guard or System Token)
 router.post('/log', authenticate, recordAccess);
 router.get('/logs', authenticate, getLogs);
+
+// Webhook for LPR Cameras (requires system token)
+router.post('/lpr-webhook', authenticate, handleLPRWebhook);
 
 export default router;

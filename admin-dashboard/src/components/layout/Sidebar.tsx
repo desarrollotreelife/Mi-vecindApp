@@ -19,7 +19,8 @@ import {
     ShieldCheck,
     Menu,
     Megaphone,
-    Package
+    Package,
+    Wrench
 } from 'lucide-react';
 import clsx from 'clsx';
 import { motion } from 'framer-motion';
@@ -35,43 +36,58 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggle }) => {
 
     const roleName = typeof user?.role === 'string' ? user.role.toLowerCase() : user?.role?.name?.toLowerCase() || '';
 
+    // TEMPORARY BYPASS: We assume all modules are active for now so the user doesn't lose access
+    // to important areas until `active_modules` is reliably populated in the DB.
+    const activeModules = user?.complex?.active_modules?.split(',') || [
+        'dashboard', 'residents', 'visits', 'pqrs', 'parking', 'amenities',
+        'store', 'maintenance', 'documents', 'voting', 'finance', 'payments', 'communications'
+    ];
+
+    const isModuleActive = (moduleId: string) => activeModules.includes(moduleId);
+
     const navItems = [
-        // Admin sees everything (or default)
-        ...(!['guard', 'vigilante'].includes(roleName) ? [{ name: 'Inicio', icon: LayoutDashboard, path: '/' }] : []),
+        // 1. Common Dashboard
+        ...(['admin', 'guard', 'vigilante'].includes(roleName) ? [{ name: 'Inicio', icon: LayoutDashboard, path: '/' }] : []),
 
-        // Guard Main Tab
-        ...(['guard', 'vigilante'].includes(roleName) ? [{ name: 'Terminal Acceso', icon: ShieldCheck, path: '/access-terminal' }] : []),
-
-        { name: 'Residentes', icon: Users, path: '/residents' },
-        { name: 'Visitantes', icon: Calendar, path: '/visits' },
-
-        // Reception Module (New)
-        ...(['guard', 'vigilante', 'admin'].includes(roleName) ? [{ name: 'Portería', icon: Package, path: '/reception' }] : []),
-
-        ...((['guard', 'admin', 'vigilante', 'celador'].includes(roleName)) ? [{ name: 'Bitácora', icon: BookOpen, path: '/logbook' }] : []),
-        { name: 'Parqueadero', icon: Car, path: '/parking' },
-        { name: 'Amenidades', icon: Building2, path: '/amenities' },
-        { name: 'Tienda', icon: ShoppingCart, path: '/store' },
-
-        // Access Terminal for Admin (Guard has it at top)
-        ...(!['guard', 'vigilante'].includes(roleName) ? [{ name: 'Terminal Acceso', icon: Scan, path: '/access-terminal' }] : []),
-
-        // Config ONLY for admin
-        ...(roleName === 'admin' ? [
-            { name: 'Propiedades', icon: Building2, path: '/units' },
-            { name: 'Configuración', icon: ShieldCheck, path: '/config' }
+        // 2. Guard Specific
+        ...(['guard', 'vigilante'].includes(roleName) ? [
+            { name: 'Terminal Acceso', icon: ShieldCheck, path: '/access-terminal' },
+            { name: 'Bitácora', icon: BookOpen, path: '/logbook' }
         ] : []),
 
-        // Guard needs Communications
-        { name: 'Comunicados', icon: Megaphone, path: '/communications' },
+        // 3. Admin (Complex) Specific
+        ...(['admin'].includes(roleName) ? [
+            // Core / Required
+            { name: 'Residentes', icon: Users, path: '/residents' },
+            { name: 'Propiedades', icon: Building2, path: '/units' },
+            { name: 'Portería', icon: Package, path: '/reception' },
+            { name: 'Bitácora', icon: BookOpen, path: '/logbook' },
+            { name: 'Terminal Acceso', icon: Scan, path: '/access-terminal' },
+            { name: 'Configuración', icon: ShieldCheck, path: '/config' },
 
-        // Admin Modules
-        ...(!['guard', 'vigilante'].includes(roleName) ? [
-            { name: 'PQRS', icon: MessageSquare, path: '/pqrs' },
-            { name: 'Actas', icon: FileText, path: '/documents' },
-            { name: 'Votaciones', icon: Vote, path: '/voting' },
-            { name: 'Finanzas', icon: PieChart, path: '/finance' },
-            { name: 'Pagos', icon: CreditCard, path: '/payments' },
+            // Optional Modules
+            ...(isModuleActive('visits') ? [{ name: 'Visitantes', icon: Calendar, path: '/visits' }] : []),
+            ...(isModuleActive('parking') ? [
+                { name: 'Parqueadero', icon: Car, path: '/parking' },
+                { name: 'Explorador 3D', icon: Building2, path: '/visualizer-3d' }
+            ] : []),
+            ...(isModuleActive('amenities') ? [{ name: 'Amenidades', icon: Building2, path: '/amenities' }] : []),
+            ...(isModuleActive('store') ? [{ name: 'Tienda', icon: ShoppingCart, path: '/store' }] : []),
+            ...(isModuleActive('maintenance') ? [{ name: 'Mantenimiento', icon: Wrench, path: '/maintenance' }] : []),
+            ...(isModuleActive('pqrs') ? [
+                { name: 'PQRS', icon: MessageSquare, path: '/pqrs' },
+                { name: 'Comunicados', icon: Megaphone, path: '/communications' }
+            ] : []),
+            ...(isModuleActive('documents') ? [{ name: 'Actas', icon: FileText, path: '/documents' }] : []),
+            ...(isModuleActive('voting') ? [{ name: 'Votaciones', icon: Vote, path: '/voting' }] : []),
+            ...(isModuleActive('finance') ? [
+                { name: 'Finanzas', icon: PieChart, path: '/finance' },
+                { name: 'Pagos', icon: CreditCard, path: '/payments' }
+            ] : []),
+        ] : []),
+
+        // 4. Super Admin Specific
+        ...(roleName === 'superadmin' ? [
             { name: 'SaaS Admin', icon: Building2, path: '/super-admin' },
         ] : []),
     ];

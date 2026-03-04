@@ -62,3 +62,62 @@ export const getUnitDetails = async (req: Request, res: Response) => {
         res.status(500).json({ error: error.message });
     }
 };
+
+export const updateUnit = async (req: Request, res: Response) => {
+    try {
+        const user = (req as any).user;
+        if (!user || !user.complex_id) return res.status(403).json({ error: 'Sin conjunto asignado' });
+
+        const id = Number(req.params.id);
+        const unit = await unitsService.updateUnit(id, req.body);
+        res.json(unit);
+    } catch (error: any) {
+        res.status(400).json({ error: error.message });
+    }
+};
+
+export const deleteUnit = async (req: Request, res: Response) => {
+    try {
+        const user = (req as any).user;
+        if (!user || !user.complex_id) return res.status(403).json({ error: 'Sin conjunto asignado' });
+
+        const id = Number(req.params.id);
+        const { securityCode } = req.body;
+
+        if (!securityCode) {
+            return res.status(400).json({ error: 'Se requiere el código de seguridad para borrar.' });
+        }
+
+        await unitsService.deleteUnit(id, securityCode, user.complex_id);
+        res.json({ message: 'Unidad eliminada exitosamente' });
+    } catch (error: any) {
+        res.status(400).json({ error: error.message });
+    }
+};
+
+export const renameBlock = async (req: Request, res: Response) => {
+    try {
+        const user = (req as any).user;
+        if (!user || !user.complex_id) return res.status(403).json({ error: 'Sin conjunto asignado' });
+
+        const { oldName, newName } = req.body;
+        if (!oldName || !newName) return res.status(400).json({ error: 'Se requiere nombre antiguo y nuevo' });
+
+        const result = await unitsService.renameBlock(user.complex_id, oldName, newName);
+        res.json(result);
+    } catch (error: any) {
+        res.status(400).json({ error: error.message });
+    }
+};
+
+export const reconfigureBlock = async (req: Request, res: Response) => {
+    try {
+        const user = (req as any).user;
+        if (!user || !user.complex_id) return res.status(403).json({ error: 'Sin conjunto asignado' });
+
+        const result = await unitsService.reconfigureBlock(user.complex_id, req.body);
+        res.json(result);
+    } catch (error: any) {
+        res.status(400).json({ error: error.message });
+    }
+};

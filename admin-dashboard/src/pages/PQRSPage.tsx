@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { MessageSquare, Plus, Send, CheckCircle, Clock } from 'lucide-react';
+import { Plus, Send } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { Table } from '../components/ui/Table';
 import { Badge } from '../components/ui/Badge';
@@ -9,7 +9,6 @@ import { useAuth } from '../context/AuthContext';
 export const PQRSPage: React.FC = () => {
     const { user } = useAuth();
     const [requests, setRequests] = useState<any[]>([]);
-    const [loading, setLoading] = useState(true);
     const [isFormOpen, setIsFormOpen] = useState(false);
 
     // New Request Form State
@@ -20,14 +19,12 @@ export const PQRSPage: React.FC = () => {
     });
 
     const fetchRequests = async () => {
-        setLoading(true);
         try {
             const response = await api.get('/pqrs');
             setRequests(response.data);
         } catch (error) {
             console.error('Error fetching PQRS:', error);
         } finally {
-            setLoading(false);
         }
     };
 

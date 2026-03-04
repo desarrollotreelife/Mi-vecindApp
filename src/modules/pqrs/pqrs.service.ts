@@ -13,9 +13,13 @@ export class PQRSService {
         });
     }
 
-    async getPQRS(userId?: number) {
-        // If userId is provided, filter by user (resident view). Otherwise show all (admin view)
-        const where = userId ? { user_id: userId } : {};
+    async getPQRS(complexId: number, userId?: number) {
+        // Filter by user (resident view) or just by complex (admin view)
+        const where: any = {
+            user: { complex_id: complexId }
+        };
+        if (userId) where.user_id = userId;
+
         return (prisma as any).pqrs.findMany({
             where,
             include: {
@@ -31,7 +35,16 @@ export class PQRSService {
         });
     }
 
-    async respondPQRS(id: number, response: string) {
+    async respondPQRS(id: number, complexId: number, response: string) {
+        const record = await (prisma as any).pqrs.findUnique({
+            where: { id },
+            include: { user: true }
+        });
+
+        if (!record || record.user.complex_id !== complexId) {
+            throw new Error('Registro no encontrado o acceso denegado');
+        }
+
         return (prisma as any).pqrs.update({
             where: { id },
             data: {

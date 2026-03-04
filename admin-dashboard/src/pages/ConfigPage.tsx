@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Shield, User, Edit, FileText, Clock, CreditCard } from 'lucide-react';
+import { Plus, Shield, User, Edit, FileText, Clock } from 'lucide-react';
 import { Table } from '../components/ui/Table';
 import { UserForm } from '../components/config/UserForm';
 import { ShiftForm } from '../components/config/ShiftForm';
@@ -250,7 +250,7 @@ export const ConfigPage = () => {
             {/* Header */}
             <div className="flex justify-between items-center">
                 <div>
-                    <h1 className="text-2xl font-bold text-slate-800">Configuración del Sistema</h1>
+                    <h1 className="text-2xl font-bold text-slate-800">Configuración de Mi VecindApp</h1>
                     <p className="text-slate-500">Gestión de usuarios y sistema</p>
                 </div>
                 {!showForm && activeTab !== 'payments' && (
@@ -274,7 +274,7 @@ export const ConfigPage = () => {
                     <div className="p-3 bg-blue-50 text-blue-600 rounded-lg"><User size={24} /></div>
                     <div>
                         <div className="text-2xl font-bold text-slate-800">{stats.total_system_users}</div>
-                        <div className="text-sm text-slate-500">Usuarios del Sistema</div>
+                        <div className="text-sm text-slate-500">Usuarios de Mi VecindApp</div>
                     </div>
                 </div>
                 <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex items-center gap-4">
@@ -300,7 +300,7 @@ export const ConfigPage = () => {
                         onClick={() => { setActiveTab('users'); setShowForm(false); }}
                         className={clsx("px-6 py-3 text-sm font-medium transition-colors border-b-2 whitespace-nowrap", activeTab === 'users' ? "border-blue-600 text-blue-600 bg-blue-50/50" : "border-transparent text-slate-500 hover:bg-slate-50")}
                     >
-                        Usuarios del Sistema
+                        Usuarios de Mi VecindApp
                     </button>
                     <button
                         onClick={() => { setActiveTab('shifts'); setShowForm(false); }}
