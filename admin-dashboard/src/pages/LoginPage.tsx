@@ -95,13 +95,17 @@ export const LoginPage = () => {
                                 <ShieldCheck size={40} strokeWidth={1.5} />
                             )}
                         </div>
-                        <h2 className="text-sm font-semibold text-emerald-600 tracking-wider uppercase mb-2">
-                            {complexInfo ? "Acceso de Residentes" : "Bienvenido de nuevo"}
-                        </h2>
                         <h1 className="text-4xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent tracking-tight leading-tight">
-                            {complexInfo ? complexInfo.name : "Mi VecindApp"}
+                            Mi VecindApp
                         </h1>
-                        <p className="text-slate-500 mt-2 text-lg">
+                        {complexInfo && (
+                            <div className="mt-3 inline-block px-4 py-1.5 bg-slate-100 rounded-full border border-slate-200">
+                                <p className="text-sm font-medium text-slate-500">
+                                    Acceso a residentes de <span className="font-bold text-slate-700">{complexInfo.name}</span>
+                                </p>
+                            </div>
+                        )}
+                        <p className="text-slate-500 mt-4 text-lg">
                             {is2FARequired ? 'Ingrese el código de 6 dígitos enviado.' : 'Bienvenido de nuevo'}
                         </p>
                     </div>
@@ -172,15 +176,6 @@ export const LoginPage = () => {
                         </button>
                     </form>
 
-                    {complexInfo && (
-                        <div className="mt-8 text-center border-t border-slate-100 pt-6">
-                            <p className="text-xs text-slate-400 font-medium tracking-wide uppercase">Tecnología de</p>
-                            <div className="flex items-center justify-center gap-1.5 mt-1 opacity-80">
-                                <ShieldCheck size={16} strokeWidth={2.5} className="text-emerald-500" />
-                                <span className="text-sm font-bold bg-gradient-to-r from-slate-700 to-slate-500 bg-clip-text text-transparent">Mi VecindApp</span>
-                            </div>
-                        </div>
-                    )}
                 </div>
             </div>
         </div>
