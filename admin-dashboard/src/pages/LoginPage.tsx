@@ -171,6 +171,16 @@ export const LoginPage = () => {
                             {loading ? 'Verificando...' : (is2FARequired ? 'Verificar Código' : 'Iniciar Sesión')}
                         </button>
                     </form>
+
+                    {complexInfo && (
+                        <div className="mt-8 text-center border-t border-slate-100 pt-6">
+                            <p className="text-xs text-slate-400 font-medium tracking-wide uppercase">Tecnología de</p>
+                            <div className="flex items-center justify-center gap-1.5 mt-1 opacity-80">
+                                <ShieldCheck size={16} strokeWidth={2.5} className="text-emerald-500" />
+                                <span className="text-sm font-bold bg-gradient-to-r from-slate-700 to-slate-500 bg-clip-text text-transparent">Mi VecindApp</span>
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
         </div>
