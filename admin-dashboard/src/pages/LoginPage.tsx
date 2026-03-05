@@ -101,7 +101,7 @@ export const LoginPage = () => {
                         {complexInfo && (
                             <div className="mt-3 inline-block px-4 py-1.5 bg-slate-100 rounded-full border border-slate-200">
                                 <p className="text-sm font-medium text-slate-500">
-                                    Acceso a residentes de <span className="font-bold text-slate-700">{complexInfo.name}</span>
+                                    Acceso de <span className="font-bold text-slate-700">{complexInfo.name}</span>
                                 </p>
                             </div>
                         )}
