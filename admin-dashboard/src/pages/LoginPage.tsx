@@ -65,9 +65,9 @@ export const LoginPage = () => {
 
                 if (lowerRole === 'superadmin') {
                     navigate('/super-admin');
-                } else if (['guard', 'vigilante'].includes(lowerRole)) {
+                } else if (['guard', 'vigilante', 'celador'].includes(lowerRole)) {
                     navigate('/access-terminal');
-                } else if (lowerRole === 'resident') {
+                } else if (['resident', 'propietario', 'residente_propietario', 'residentepropietario'].includes(lowerRole)) {
                     navigate('/resident');
                 } else {
                     navigate('/');
