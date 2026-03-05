@@ -26,11 +26,23 @@ export const createComplex = async (req: Request, res: Response) => {
     try {
         const { name, nit, address, city, admin_document_num, admin_email, admin_password } = req.body;
 
-        // Transaction: Create Complex -> Create Admin User -> Link
         const result = await prisma.$transaction(async (tx) => {
+            // Generate base slug
+            const baseSlug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
+            let finalSlug = baseSlug;
+            let counter = 1;
+
+            // Just a safeguard to ensure uniqueness inside transaction if possible, 
+            // but prisma findFirst inside tx is fine although could race condition, 
+            // since this is low volume it should be okay.
+            while (await tx.residentialComplex.findUnique({ where: { url_slug: finalSlug } })) {
+                finalSlug = `${baseSlug}-${counter}`;
+                counter++;
+            }
+
             // 1. Create Complex
             const complex = await tx.residentialComplex.create({
-                data: { name, nit, address, city }
+                data: { name, nit, address, city, url_slug: finalSlug }
             });
 
             // 2. Create Admin User

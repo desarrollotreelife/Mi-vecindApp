@@ -39,6 +39,7 @@ function App() {
       <AuthProvider>
         <ThemeProvider>
           <Routes>
+            <Route path="/ingreso/:slug" element={<LoginPage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/payments/response" element={<PaymentResponsePage />} />
 

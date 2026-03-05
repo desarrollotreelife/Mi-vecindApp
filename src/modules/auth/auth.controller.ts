@@ -20,7 +20,17 @@ export const login = async (req: Request, res: Response) => {
     } catch (error: any) {
         res.status(401).json({ error: error.message });
     }
-}
+};
+
+export const getComplexBySlug = async (req: Request, res: Response) => {
+    try {
+        const { slug } = req.params;
+        const result = await authService.getComplexBySlug(slug as string);
+        res.json(result);
+    } catch (error: any) {
+        res.status(404).json({ error: error.message });
+    }
+};
 
 
 export const verify2FA = async (req: Request, res: Response) => {

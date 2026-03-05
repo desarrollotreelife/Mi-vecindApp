@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Building2, Plus, Power, Search, Shield, Settings, Edit } from 'lucide-react';
+import { Building2, Plus, Power, Search, Shield, Settings, Edit, Link } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import api from '../services/api';
 import toast from 'react-hot-toast';
@@ -166,6 +166,12 @@ export const SuperAdminPage: React.FC = () => {
         setIsPaymentOpen(true);
     };
 
+    const handleCopyLink = (slug: string) => {
+        const url = `${window.location.origin}/ingreso/${slug}`;
+        navigator.clipboard.writeText(url);
+        toast.success('Enlace de acceso copiado al portapapeles');
+    };
+
     const filteredComplexes = complexes.filter(c =>
         c.name.toLowerCase().includes(search.toLowerCase()) ||
         c.nit?.includes(search)
@@ -258,6 +264,15 @@ export const SuperAdminPage: React.FC = () => {
                                                     >
                                                         <Edit size={18} />
                                                     </button>
+                                                    {complex.url_slug && (
+                                                        <button
+                                                            onClick={() => handleCopyLink(complex.url_slug)}
+                                                            className="p-2 rounded-lg hover:bg-teal-50 text-slate-400 hover:text-teal-600 transition-colors"
+                                                            title="Copiar Enlace de Acceso"
+                                                        >
+                                                            <Link size={18} />
+                                                        </button>
+                                                    )}
                                                     <button
                                                         onClick={() => openModuleModal(complex)}
                                                         className="p-2 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-primary-600 transition-colors"

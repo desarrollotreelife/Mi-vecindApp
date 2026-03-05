@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Lock, User, ShieldCheck, KeyRound } from 'lucide-react';
 import api from '../services/api';
@@ -13,6 +13,21 @@ export const LoginPage = () => {
 
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
+
+    // Custom Complex Login
+    const { slug } = useParams<{ slug?: string }>();
+    const [complexInfo, setComplexInfo] = useState<{ name: string, logo_url: string | null } | null>(null);
+
+    useEffect(() => {
+        if (slug) {
+            api.get(`/auth/complex/${slug}`)
+                .then(res => setComplexInfo(res.data))
+                .catch(err => {
+                    console.error("Invalid or inactive complex URL:", err);
+                    setError('Este enlace de acceso no es válido o está inactivo.');
+                });
+        }
+    }, [slug]);
 
     const { login } = useAuth();
     const navigate = useNavigate();
@@ -31,7 +46,7 @@ export const LoginPage = () => {
                 navigate('/');
             } else {
                 // Normal Login
-                const response = await api.post('/auth/login', { document_num: documentNum, password });
+                const response = await api.post('/auth/login', { document_num: documentNum, password, slug });
 
                 if (response.data.status === '2fa_required') {
                     setUserId(response.data.userId);
@@ -70,14 +85,21 @@ export const LoginPage = () => {
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-4">
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col md:flex-row">
-                <div className="w-full p-8 md:p-10">
-                    <div className="text-center mb-8">
-                        <div className="w-16 h-16 bg-primary-100/50 rounded-2xl flex items-center justify-center mx-auto mb-4 text-primary-600">
-                            <ShieldCheck size={32} />
+            <div className="w-full max-w-md p-8 relative z-10">
+                <div className="bg-white/90 backdrop-blur-xl rounded-3xl shadow-2xl p-8 border border-white/50 relative overflow-hidden">
+                    <div className="text-center mb-10 relative z-10">
+                        <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-tr from-emerald-500 to-teal-400 text-white shadow-xl shadow-emerald-500/30 mb-6 transform hover:scale-105 transition-transform duration-300">
+                            {complexInfo && complexInfo.logo_url ? (
+                                <img src={complexInfo.logo_url} alt="Logo" className="w-full h-full object-cover rounded-2xl" />
+                            ) : (
+                                <ShieldCheck size={40} strokeWidth={1.5} />
+                            )}
                         </div>
-                        <h1 className="text-3xl font-bold text-slate-900 tracking-tight">
-                            {is2FARequired ? 'Verificación de Seguridad' : 'Mi VecindApp'}
+                        <h2 className="text-sm font-semibold text-emerald-600 tracking-wider uppercase mb-2">
+                            {complexInfo ? "Acceso de Residentes" : "Bienvenido de nuevo"}
+                        </h2>
+                        <h1 className="text-4xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent tracking-tight leading-tight">
+                            {complexInfo ? complexInfo.name : "Mi VecindApp"}
                         </h1>
                         <p className="text-slate-500 mt-2 text-lg">
                             {is2FARequired ? 'Ingrese el código de 6 dígitos enviado.' : 'Bienvenido de nuevo'}

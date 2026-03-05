@@ -43,6 +43,15 @@ export class AuthService {
             throw new Error('Credenciales inválidas');
         }
 
+        // --- ENFORCE COMPLEX RESTRICTION BASED ON PROVIDED SLUG ---
+        if (data.slug) {
+            const complexBySlug = await prisma.residentialComplex.findUnique({ where: { url_slug: data.slug } });
+            // If the user's complex_id does not match the slug's complex (and they are not Super Admin role 7)
+            if (complexBySlug && user.role_id !== 7 && user.complex_id !== complexBySlug.id) {
+                throw new Error('No estás registrado en este conjunto residencial');
+            }
+        }
+
         // --- 2FA CHECK ---
         if (user.two_factor_enabled) {
             // Generate 6 digit code
@@ -134,5 +143,22 @@ export class AuthService {
             hashStart: user.password_hash.substring(0, 10),
             compareTest123456: isValid
         };
+    }
+
+    async getComplexBySlug(slug: string) {
+        const complex = await prisma.residentialComplex.findUnique({
+            where: { url_slug: slug },
+            select: { id: true, name: true, logo_url: true, is_active: true }
+        });
+
+        if (!complex) {
+            throw new Error('Conjunto no encontrado');
+        }
+
+        if (!complex.is_active) {
+            throw new Error('El servicio para este conjunto ha sido temporalmente suspendido');
+        }
+
+        return complex;
     }
 }

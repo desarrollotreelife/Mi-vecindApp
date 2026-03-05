@@ -13,65 +13,65 @@ datasource db {
 // --- 1. Auth & Users ---
 
 model Role {
-  id          Int      @id @default(autoincrement())
-  name        String   @unique // 'admin', 'guard', 'resident', 'staff'
-  permissions String?  // List of allowed actions (JSON stringified)
+  id          Int     @id @default(autoincrement())
+  name        String  @unique // 'admin', 'guard', 'resident', 'staff'
+  permissions String? // List of allowed actions (JSON stringified)
   users       User[]
 }
 
 model ShiftConfig {
-  id         Int      @id @default(autoincrement())
-  name       String   @unique
-  start_time String   // Format: "HH:mm"
-  end_time   String   // Format: "HH:mm"
-  is_active  Boolean  @default(true)
+  id         Int     @id @default(autoincrement())
+  name       String  @unique
+  start_time String // Format: "HH:mm"
+  end_time   String // Format: "HH:mm"
+  is_active  Boolean @default(true)
 }
 
 model User {
-  id            Int       @id @default(autoincrement())
-  email         String?   @unique
-  document_num  String    @unique // Cédula/ID
+  id            Int                 @id @default(autoincrement())
+  email         String?             @unique
+  document_num  String              @unique // Cédula/ID
   password_hash String
   full_name     String
   phone         String?
   role_id       Int
-  role          Role      @relation(fields: [role_id], references: [id])
+  role          Role                @relation(fields: [role_id], references: [id])
   complex_id    Int?
   complex       ResidentialComplex? @relation(fields: [complex_id], references: [id])
-  is_active     Boolean   @default(true) // Deprecate in favor of status? Or keep sync.
-  profile_photo String?   // URL to image
-  
+  is_active     Boolean             @default(true) // Deprecate in favor of status? Or keep sync.
+  profile_photo String? // URL to image
+
   // 2FA Fields
-  two_factor_enabled Boolean @default(false)
+  two_factor_enabled Boolean   @default(false)
   two_factor_method  String? // 'email', 'sms'
   two_factor_secret  String? // For TOTP
   two_factor_code    String? // Temporary code
   two_factor_expires DateTime?
-  
+
   // Nuevos campos para gestión de personal
-  address         String?
-  position        String?   // Cargo
-  shift           String?   // Turno (morning, afternoon, night)
-  security_company String?  // Empresa de vigilancia externa
-  hire_date       DateTime?
-  status          String    @default("active") // active, inactive
-  last_login      DateTime?
+  address          String?
+  position         String? // Cargo
+  shift            String? // Turno (morning, afternoon, night)
+  security_company String? // Empresa de vigilancia externa
+  hire_date        DateTime?
+  status           String    @default("active") // active, inactive
+  last_login       DateTime?
   last_verified_at DateTime? @default(now())
-  failed_attempts Int       @default(0)
-  
-  created_at    DateTime  @default(now())
-  updated_at    DateTime  @updatedAt
-  
+  failed_attempts  Int       @default(0)
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
   // Relations
-  resident      Resident?
-  sessions      Session[]
-  access_logs   AccessLog[] 
-  bookings      Booking[]
-  audit_logs    AuditLog[] // Relación con logs
-  cash_shifts   CashShift[]
-  pqrs          PQRS[]
-  votes         Vote[]
-  announcements Announcement[]
+  resident         Resident?
+  sessions         Session[]
+  access_logs      AccessLog[]
+  bookings         Booking[]
+  audit_logs       AuditLog[] // Relación con logs
+  cash_shifts      CashShift[]
+  pqrs             PQRS[]
+  votes            Vote[]
+  announcements    Announcement[]
   emergency_alerts EmergencyAlert[]
   atended_alerts   EmergencyAlert[] @relation("AlertHandler")
 }
@@ -79,14 +79,14 @@ model User {
 model AuditLog {
   id          Int      @id @default(autoincrement())
   user_id     Int
-  action      String   // CREATE, UPDATE, DELETE, LOGIN, ETC
-  module      String   // residents, visits, config, etc.
+  action      String // CREATE, UPDATE, DELETE, LOGIN, ETC
+  module      String // residents, visits, config, etc.
   description String
   ip_address  String?
-  metadata    String?  // JSON string
+  metadata    String? // JSON string
   created_at  DateTime @default(now())
 
-  user        User     @relation(fields: [user_id], references: [id])
+  user User @relation(fields: [user_id], references: [id])
 }
 
 model Session {
@@ -102,79 +102,79 @@ model Session {
 // --- 2. Residential Core ---
 
 model Unit {
-  id        Int      @id @default(autoincrement())
-  type      String   // 'apartment', 'house'
-  block     String?
-  number    String
-  floor     Int?
-  coefficient Decimal @default(0) // Coeficiente de copropiedad (Ley 675)
-  complex_id    Int?
-  complex       ResidentialComplex? @relation(fields: [complex_id], references: [id])
-  
-  residents Resident[]
-  pets      Pet[]
-  parkings  ParkingSlot[]
-  bills     Bill[]
-  votes     Vote[]
-  correspondence Correspondence[]
+  id          Int                 @id @default(autoincrement())
+  type        String // 'apartment', 'house'
+  block       String?
+  number      String
+  floor       Int?
+  coefficient Decimal             @default(0) // Coeficiente de copropiedad (Ley 675)
+  complex_id  Int?
+  complex     ResidentialComplex? @relation(fields: [complex_id], references: [id])
+
+  residents        Resident[]
+  pets             Pet[]
+  parkings         ParkingSlot[]
+  bills            Bill[]
+  votes            Vote[]
+  correspondence   Correspondence[]
   emergency_alerts EmergencyAlert[]
 
   @@unique([complex_id, block, number])
 }
 
 model Resident {
-  id            Int      @id @default(autoincrement())
-  user_id       Int      @unique
-  user          User     @relation(fields: [user_id], references: [id])
-  unit_id       Int
-  unit          Unit     @relation(fields: [unit_id], references: [id])
-  type          String   // 'owner', 'tenant', 'family'
-  biometric_ref String?  // Reference ID for external face recognition service
+  id                   Int     @id @default(autoincrement())
+  user_id              Int     @unique
+  user                 User    @relation(fields: [user_id], references: [id])
+  unit_id              Int
+  unit                 Unit    @relation(fields: [unit_id], references: [id])
+  type                 String // 'owner', 'tenant', 'family'
+  biometric_ref        String? // Reference ID for external face recognition service
   biometric_descriptor String? // JSON string of face descriptor (128 floats)
-  
-  vehicles      Vehicle[]
-  visits_hosted Visit[]
-  sales         Sale[]
-  wallet        Wallet?
-  reported_maintenance MaintenanceTask[] @relation("ResidentReports")
-  attendances   VotingAttendance[]
-  subscriptions ProductSubscription[]
-  loyalty_points Int @default(0)
+
+  vehicles             Vehicle[]
+  visits_hosted        Visit[]
+  sales                Sale[]
+  wallet               Wallet?
+  reported_maintenance MaintenanceTask[]     @relation("ResidentReports")
+  attendances          VotingAttendance[]
+  subscriptions        ProductSubscription[]
+  loyalty_points       Int                   @default(0)
 }
 
 model Pet {
-  id               Int      @id @default(autoincrement())
+  id               Int     @id @default(autoincrement())
   name             String
-  type             String   // 'dog', 'cat'
+  type             String // 'dog', 'cat'
   breed            String?
   photo_url        String?
-  vaccines_updated Boolean  @default(false)
+  vaccines_updated Boolean @default(false)
   description      String?
-  
-  unit_id          Int
-  unit             Unit     @relation(fields: [unit_id], references: [id])
+
+  unit_id Int
+  unit    Unit @relation(fields: [unit_id], references: [id])
 }
 
 // --- 3. Visitor Management ---
 
 model Visitor {
-  id                   Int      @id @default(autoincrement())
+  id                   Int                 @id @default(autoincrement())
   name                 String
-  document_num         String   @unique
+  document_num         String              @unique
   photo_url            String?
   complex_id           Int?
   complex              ResidentialComplex? @relation(fields: [complex_id], references: [id])
-  is_permanent         Boolean  @default(false)
-  allowed_days         String?  // e.g. "Lun,Mie,Vie"
-  allowed_time_start   String?  // e.g. "08:00"
-  allowed_time_end     String?  // e.g. "17:00"
-  biometric_descriptor String?  // Face data for AI matching
-  
+  is_permanent         Boolean             @default(false)
+  allowed_days         String? // e.g. "Lun,Mie,Vie"
+  allowed_time_start   String? // e.g. "08:00"
+  allowed_time_end     String? // e.g. "17:00"
+  biometric_descriptor String? // Face data for AI matching
+
   last_verified_at DateTime? @default(now())
   created_at       DateTime  @default(now())
   updated_at       DateTime  @default(now()) @updatedAt
 
-  visits       Visit[]
+  visits Visit[]
 }
 
 model Visit {
@@ -191,8 +191,8 @@ model Visit {
   qr_token        String?   @unique // Unique token for QR generation
   observations    String?
   created_at      DateTime  @default(now())
-  
-  access_logs     AccessLog[]
+
+  access_logs AccessLog[]
 }
 
 // --- 4. Parking & Vehicles ---
@@ -200,56 +200,56 @@ model Visit {
 model Vehicle {
   id          Int       @id @default(autoincrement())
   plate       String    @unique
-  type        String?   // 'car', 'motorcycle'
+  type        String? // 'car', 'motorcycle'
   brand       String?
   color       String?
   resident_id Int?
   resident    Resident? @relation(fields: [resident_id], references: [id])
-  
+
   parking_usage ParkingUsage[]
 }
 
 model ParkingSlot {
-  id           Int      @id @default(autoincrement())
-  code         String   //@unique // Unique per complex, not global? For now keep global unique or make composite. 
+  id          Int                 @id @default(autoincrement())
+  code        String //@unique // Unique per complex, not global? For now keep global unique or make composite. 
   // actually code might be '101' in multiple complexes. 
   // So unique constraint should be [complex_id, code]. 
   // BUT changing unique constraint is hard with sqlite if data exists.
   // For now, I will just add complex_id.
-  type         String   // 'resident', 'visitor'
-  floor        Int      @default(1) // 1, 2, -1 (basement)
-  is_occupied  Boolean  @default(false)
-  unit_id      Int?
-  unit         Unit?    @relation(fields: [unit_id], references: [id])
-  complex_id   Int?
-  complex      ResidentialComplex? @relation(fields: [complex_id], references: [id])
-  
-  usages       ParkingUsage[]
+  type        String // 'resident', 'visitor'
+  floor       Int                 @default(1) // 1, 2, -1 (basement)
+  is_occupied Boolean             @default(false)
+  unit_id     Int?
+  unit        Unit?               @relation(fields: [unit_id], references: [id])
+  complex_id  Int?
+  complex     ResidentialComplex? @relation(fields: [complex_id], references: [id])
+
+  usages ParkingUsage[]
 
   @@unique([complex_id, code])
 }
 
 model ParkingUsage {
-  id          Int         @id @default(autoincrement())
-  slot_id     Int
-  slot        ParkingSlot @relation(fields: [slot_id], references: [id])
-  vehicle_id  Int
-  vehicle     Vehicle     @relation(fields: [vehicle_id], references: [id])
-  entry_time  DateTime    @default(now())
-  exit_time   DateTime?
+  id         Int         @id @default(autoincrement())
+  slot_id    Int
+  slot       ParkingSlot @relation(fields: [slot_id], references: [id])
+  vehicle_id Int
+  vehicle    Vehicle     @relation(fields: [vehicle_id], references: [id])
+  entry_time DateTime    @default(now())
+  exit_time  DateTime?
 }
 
 // --- 5. Access & Security ---
 
 model AccessPoint {
-  id    Int    @id @default(autoincrement())
-  name  String // 'Main Gate', 'Tower A Hall'
-  type  String // 'pedestrian', 'vehicle'
-  zone  String?
+  id         Int                 @id @default(autoincrement())
+  name       String // 'Main Gate', 'Tower A Hall'
+  type       String // 'pedestrian', 'vehicle'
+  zone       String?
   complex_id Int?
   complex    ResidentialComplex? @relation(fields: [complex_id], references: [id])
-  
-  logs  AccessLog[]
+
+  logs AccessLog[]
 }
 
 model AccessLog {
@@ -261,11 +261,11 @@ model AccessLog {
   user            User?       @relation(fields: [user_id], references: [id])
   visit_id        Int?
   visit           Visit?      @relation(fields: [visit_id], references: [id])
-  method          String      // 'face', 'qr', 'rfid', 'pin', 'lpr', 'id_card'
+  method          String // 'face', 'qr', 'rfid', 'pin', 'lpr', 'id_card'
   success         Boolean
   notes           String?
-  snapshot_url    String?     // URL to evidence image
-  metadata        String?     // JSON: { confidence: 0.98, plate_detected: "ABC-123" }
+  snapshot_url    String? // URL to evidence image
+  metadata        String? // JSON: { confidence: 0.98, plate_detected: "ABC-123" }
 }
 
 model Blacklist {
@@ -278,17 +278,17 @@ model Blacklist {
 // --- 6. Amenities & Booking ---
 
 model Amenity {
-  id             Int       @id @default(autoincrement())
+  id             Int                 @id @default(autoincrement())
   name           String
   capacity       Int
-  price_per_hour Decimal   @default(0)
+  price_per_hour Decimal             @default(0)
   description    String?
   complex_id     Int?
   complex        ResidentialComplex? @relation(fields: [complex_id], references: [id])
-  status         String    @default("available") // available, maintenance
+  status         String              @default("available") // available, maintenance
   rules          String?
-  
-  bookings       Booking[]
+
+  bookings Booking[]
 }
 
 model Booking {
@@ -313,25 +313,25 @@ model CashShift {
   end_time        DateTime?
   initial_amount  Decimal   @default(0)
   final_amount    Decimal?
-  expected_amount Decimal?  // System calculated
+  expected_amount Decimal? // System calculated
   status          String    @default("open") // open, closed
   notes           String?
-  
-  sales           Sale[]
+
+  sales Sale[]
 }
 
 model Product {
-  id            Int     @id @default(autoincrement())
+  id            Int                 @id @default(autoincrement())
   name          String
-  sku           String  @unique
+  sku           String              @unique
   price         Decimal
   current_stock Int
-  min_stock     Int     @default(5)
+  min_stock     Int                 @default(5)
   category      String? // Department (e.g. Gaseosas, Jugos, Confiteria)
   image_url     String?
   complex_id    Int?
   complex       ResidentialComplex? @relation(fields: [complex_id], references: [id])
-  
+
   logs          InventoryLog[]
   sale_items    SaleItem[]
   subscriptions ProductSubscription[]
@@ -343,8 +343,8 @@ model ProductSubscription {
   resident    Resident @relation(fields: [resident_id], references: [id])
   product_id  Int
   product     Product  @relation(fields: [product_id], references: [id])
-  frequency   String   // 'daily', 'weekly', 'biweekly', 'monthly'
-  day_of_week Int?     // 1=Monday, ... 7=Sunday
+  frequency   String // 'daily', 'weekly', 'biweekly', 'monthly'
+  day_of_week Int? // 1=Monday, ... 7=Sunday
   quantity    Int      @default(1)
   status      String   @default("active") // active, paused, cancelled
   created_at  DateTime @default(now())
@@ -355,7 +355,7 @@ model InventoryLog {
   id         Int      @id @default(autoincrement())
   product_id Int
   product    Product  @relation(fields: [product_id], references: [id])
-  type       String   // 'in', 'out', 'adjustment'
+  type       String // 'in', 'out', 'adjustment'
   quantity   Int
   reason     String?
   date       DateTime @default(now())
@@ -366,13 +366,13 @@ model Sale {
   resident_id    Int
   resident       Resident   @relation(fields: [resident_id], references: [id])
   total          Decimal
-  payment_method String     // 'cash', 'credit', 'account_balance'
+  payment_method String // 'cash', 'credit', 'account_balance'
   payment_status String     @default("paid") // 'paid', 'pending' (credit)
   cash_shift_id  Int?
   cash_shift     CashShift? @relation(fields: [cash_shift_id], references: [id])
   created_at     DateTime   @default(now())
-  
-  items          SaleItem[]
+
+  items SaleItem[]
 }
 
 model SaleItem {
@@ -388,12 +388,12 @@ model SaleItem {
 // --- 8. Billing & Finance ---
 
 model Wallet {
-  id           Int       @id @default(autoincrement())
-  resident_id  Int       @unique
-  resident     Resident  @relation(fields: [resident_id], references: [id])
-  balance      Decimal   @default(0)
+  id           Int                 @id @default(autoincrement())
+  resident_id  Int                 @unique
+  resident     Resident            @relation(fields: [resident_id], references: [id])
+  balance      Decimal             @default(0)
   transactions WalletTransaction[]
-  updated_at   DateTime  @updatedAt
+  updated_at   DateTime            @updatedAt
 }
 
 model WalletTransaction {
@@ -401,31 +401,31 @@ model WalletTransaction {
   wallet_id   Int
   wallet      Wallet   @relation(fields: [wallet_id], references: [id])
   amount      Decimal
-  type        String   // 'recharge' (credit), 'purchase' (debit), 'refund' (credit)
+  type        String // 'recharge' (credit), 'purchase' (debit), 'refund' (credit)
   description String?
   created_at  DateTime @default(now())
 }
 
 model Bill {
-  id              Int       @id @default(autoincrement())
-  unit_id         Int
-  unit            Unit      @relation(fields: [unit_id], references: [id])
-  type            String    // 'admin_fee', 'fine', 'store', 'booking'
-  amount          Decimal
-  description     String?
-  due_date        DateTime
-  status          String    // 'paid', 'pending', 'overdue'
-  created_at      DateTime  @default(now())
-  
-  payments        Payment[]
+  id          Int      @id @default(autoincrement())
+  unit_id     Int
+  unit        Unit     @relation(fields: [unit_id], references: [id])
+  type        String // 'admin_fee', 'fine', 'store', 'booking'
+  amount      Decimal
+  description String?
+  due_date    DateTime
+  status      String // 'paid', 'pending', 'overdue'
+  created_at  DateTime @default(now())
+
+  payments Payment[]
 }
 
 model Expense {
-  id          Int      @id @default(autoincrement())
+  id          Int                 @id @default(autoincrement())
   amount      Decimal
-  category    String   // 'maintenance', 'services', 'payroll', 'supplies', 'other'
+  category    String // 'maintenance', 'services', 'payroll', 'supplies', 'other'
   description String
-  date        DateTime @default(now())
+  date        DateTime            @default(now())
   complex_id  Int?
   complex     ResidentialComplex? @relation(fields: [complex_id], references: [id])
 }
@@ -436,7 +436,7 @@ model PQRS {
   id          Int      @id @default(autoincrement())
   user_id     Int
   user        User     @relation(fields: [user_id], references: [id])
-  type        String   // 'petition', 'complaint', 'claim', 'suggestion'
+  type        String // 'petition', 'complaint', 'claim', 'suggestion'
   subject     String
   description String
   status      String   @default("open") // open, in_progress, closed, rejected
@@ -446,26 +446,26 @@ model PQRS {
 }
 
 model Minute {
-  id          Int      @id @default(autoincrement())
+  id          Int                 @id @default(autoincrement())
   title       String
-  type        String   // 'assembly', 'council'
+  type        String // 'assembly', 'council'
   date        DateTime
   file_url    String
   description String?
   complex_id  Int?
   complex     ResidentialComplex? @relation(fields: [complex_id], references: [id])
-  created_at  DateTime @default(now())
+  created_at  DateTime            @default(now())
 }
 
 model VotingSession {
-  id          Int         @id @default(autoincrement())
+  id          Int                 @id @default(autoincrement())
   title       String
   description String?
   start_date  DateTime
   end_date    DateTime?
-  status      String      @default("draft") // draft, open, closed
-  type        String      // 'assembly', 'poll'
-  created_at  DateTime    @default(now())
+  status      String              @default("draft") // draft, open, closed
+  type        String // 'assembly', 'poll'
+  created_at  DateTime            @default(now())
   complex_id  Int?
   complex     ResidentialComplex? @relation(fields: [complex_id], references: [id])
   topics      VoteTopic[]
@@ -484,13 +484,13 @@ model VotingAttendance {
 }
 
 model VoteTopic {
-  id          Int           @id @default(autoincrement())
-  session_id  Int
-  session     VotingSession @relation(fields: [session_id], references: [id])
-  question    String
-  options     String        // JSON string: ["Option A", "Option B"]
-  
-  votes       Vote[]
+  id         Int           @id @default(autoincrement())
+  session_id Int
+  session    VotingSession @relation(fields: [session_id], references: [id])
+  question   String
+  options    String // JSON string: ["Option A", "Option B"]
+
+  votes Vote[]
 }
 
 model Vote {
@@ -502,94 +502,95 @@ model Vote {
   user_id     Int
   user        User      @relation(fields: [user_id], references: [id])
   choice      String
-  coefficient Decimal   // Snapshot of coefficient at time of vote
+  coefficient Decimal // Snapshot of coefficient at time of vote
   timestamp   DateTime  @default(now())
 
   @@unique([topic_id, unit_id]) // One vote per unit per topic
 }
 
 model Payment {
-  id          Int      @id @default(autoincrement())
-  bill_id     Int
-  bill        Bill     @relation(fields: [bill_id], references: [id])
-  amount      Decimal
-  method      String   // 'bank_transfer', 'cash', 'app'
-  date        DateTime @default(now())
-  reference   String?
+  id        Int      @id @default(autoincrement())
+  bill_id   Int
+  bill      Bill     @relation(fields: [bill_id], references: [id])
+  amount    Decimal
+  method    String // 'bank_transfer', 'cash', 'app'
+  date      DateTime @default(now())
+  reference String?
 }
 
 // --- 10. Communications ---
 
 model Announcement {
-  id          Int      @id @default(autoincrement())
-  title       String
-  content     String
-  type        String   // 'general', 'news', 'alert'
-  priority    String   // 'low', 'medium', 'high'
-  expires_at  DateTime?
-  created_by  Int
-  author      User     @relation(fields: [created_by], references: [id])
-  created_at  DateTime @default(now())
-  complex_id  Int?
-  complex     ResidentialComplex? @relation(fields: [complex_id], references: [id])
-  
+  id         Int                 @id @default(autoincrement())
+  title      String
+  content    String
+  type       String // 'general', 'news', 'alert'
+  priority   String // 'low', 'medium', 'high'
+  expires_at DateTime?
+  created_by Int
+  author     User                @relation(fields: [created_by], references: [id])
+  created_at DateTime            @default(now())
+  complex_id Int?
+  complex    ResidentialComplex? @relation(fields: [complex_id], references: [id])
+
   // Future: target audience (by tower/role)
 }
 
 // --- 11. Multi-Tenancy (SaaS Core) ---
 
 model ResidentialComplex {
-  id          Int      @id @default(autoincrement())
-  name        String
-  nit         String?  @unique
-  address     String?
-  city        String?
-  phone       String?
-  logo_url    String?
-  timezone    String   @default("America/Bogota")
-  
+  id       Int     @id @default(autoincrement())
+  name     String
+  nit      String? @unique
+  url_slug String? @unique
+  address  String?
+  city     String?
+  phone    String?
+  logo_url String?
+  timezone String  @default("America/Bogota")
+
   // Settings
-  currency    String   @default("COP")
-  locale      String   @default("es-CO")
-  
+  currency String @default("COP")
+  locale   String @default("es-CO")
+
   // Payment Configuration (ePayco / Gateway)
-  payment_provider    String?  @default("epayco") // 'epayco'
-  epayco_public_key   String?
-  epayco_private_key  String?
-  epayco_p_cust_id    String?
-  epayco_p_key        String?
-  is_payment_active   Boolean  @default(false)
-  
-  created_at  DateTime @default(now())
-  is_active   Boolean  @default(true) // Interruptor general (Kill Switch)
+  payment_provider   String? @default("epayco") // 'epayco'
+  epayco_public_key  String?
+  epayco_private_key String?
+  epayco_p_cust_id   String?
+  epayco_p_key       String?
+  is_payment_active  Boolean @default(false)
+
+  created_at DateTime @default(now())
+  is_active  Boolean  @default(true) // Interruptor general (Kill Switch)
 
   // SaaS Billing & Subscription
   subscription_status String    @default("active") // active, past_due, suspended
   billing_due_date    DateTime?
   last_payment_date   DateTime?
   plan_type           String    @default("standard") // standard, premium
-  contact_email       String?   // Para notificaciones de cobro
-  deletion_passcode   String?   // Código de seguridad para borrados permanentes
-  layout_config       String?   // JSON configuration for 3D map layout
-  active_modules      String?   // List of active modules (e.g. "finance,tienda,maintenance")
+  contact_email       String? // Para notificaciones de cobro
+  deletion_passcode   String? // Código de seguridad para borrados permanentes
+  layout_config       String? // JSON configuration for 3D map layout
+  active_modules      String? // List of active modules (e.g. "finance,tienda,maintenance")
 
   // Automated Billing Config
-  billing_day         Int       @default(1)    // Day of month to generate bills (1-28)
-  base_admin_fee      Decimal   @default(0)    // Total administration fee for the whole complex
-  
+  billing_day    Int     @default(1) // Day of month to generate bills (1-28)
+  base_admin_fee Decimal @default(0) // Total administration fee for the whole complex
+
   maintenance_items MaintenanceItem[]
-  
-  users           User[]
-  units           Unit[]
-  amenities       Amenity[]
-  products        Product[]
-  access_points   AccessPoint[]
-  visitors        Visitor[]
-  announcements   Announcement[]
-  minutes         Minute[]
-  voting_sessions VotingSession[]
-  expenses        Expense[]
-  parkings        ParkingSlot[]
+
+  users            User[]
+  units            Unit[]
+  amenities        Amenity[]
+  products         Product[]
+  access_points    AccessPoint[]
+  visitors         Visitor[]
+  announcements    Announcement[]
+  minutes          Minute[]
+  voting_sessions  VotingSession[]
+  expenses         Expense[]
+  parkings         ParkingSlot[]
   document_folders DocumentFolder[]
   correspondence   Correspondence[]
   emergency_alerts EmergencyAlert[]
@@ -600,154 +601,153 @@ model ResidentialComplex {
 // --- 14. Emergency & Security (Panic Button) ---
 
 model EmergencyAlert {
-  id              Int       @id @default(autoincrement())
-  user_id         Int
-  user            User      @relation(fields: [user_id], references: [id])
-  unit_id         Int?
-  unit            Unit?     @relation(fields: [unit_id], references: [id])
-  complex_id      Int
-  complex         ResidentialComplex @relation(fields: [complex_id], references: [id])
-  
-  type            String    @default("panic") // 'panic', 'medical', 'fire'
-  status          String    @default("active") // 'active', 'attended', 'dismissed'
-  
+  id         Int                @id @default(autoincrement())
+  user_id    Int
+  user       User               @relation(fields: [user_id], references: [id])
+  unit_id    Int?
+  unit       Unit?              @relation(fields: [unit_id], references: [id])
+  complex_id Int
+  complex    ResidentialComplex @relation(fields: [complex_id], references: [id])
+
+  type   String @default("panic") // 'panic', 'medical', 'fire'
+  status String @default("active") // 'active', 'attended', 'dismissed'
+
   // Geolocation
-  latitude        Float?
-  longitude       Float?
-  accuracy        Float?
-  
+  latitude  Float?
+  longitude Float?
+  accuracy  Float?
+
   // Multimedia / Logs
-  audio_url       String?   // Optional: Link to auto-recorded ambient audio
-  notes           String?   // Guard notes after attendance
-  
-  created_at      DateTime  @default(now())
-  attended_at     DateTime?
-  attended_by_id  Int?      // Link to User (Guard/Admin)
-  attendant       User?     @relation("AlertHandler", fields: [attended_by_id], references: [id])
+  audio_url String? // Optional: Link to auto-recorded ambient audio
+  notes     String? // Guard notes after attendance
+
+  created_at     DateTime  @default(now())
+  attended_at    DateTime?
+  attended_by_id Int? // Link to User (Guard/Admin)
+  attendant      User?     @relation("AlertHandler", fields: [attended_by_id], references: [id])
 }
 
 // --- 13. Correspondence / Package Notification ---
 
 model Correspondence {
-  id              Int       @id @default(autoincrement())
-  unit_id         Int
-  unit            Unit      @relation(fields: [unit_id], references: [id])
-  complex_id      Int
-  complex         ResidentialComplex @relation(fields: [complex_id], references: [id])
-  recipient_name  String?   // Optional: Especificar si es para alguien puntual en la unidad
-  type            String    // 'package', 'letter', 'invoice', 'other'
-  sender          String?   // Quién envía (Servientrega, Amazon, etc.)
-  description     String?   // Notas sobre el paquete (ej: "Sobre de color amarillo")
-  photo_url       String?   // Evidencia visual de la llegada
-  locker_number   String?   // Smart Locker Compartment ID
-  pickup_pin      String?   // Temporary PIN code for the resident
-  status          String    @default("pending") // 'pending', 'delivered'
-  received_at     DateTime  @default(now())
-  delivered_at    DateTime?
-  
-  created_at      DateTime  @default(now())
-  updated_at      DateTime  @updatedAt
+  id             Int                @id @default(autoincrement())
+  unit_id        Int
+  unit           Unit               @relation(fields: [unit_id], references: [id])
+  complex_id     Int
+  complex        ResidentialComplex @relation(fields: [complex_id], references: [id])
+  recipient_name String? // Optional: Especificar si es para alguien puntual en la unidad
+  type           String // 'package', 'letter', 'invoice', 'other'
+  sender         String? // Quién envía (Servientrega, Amazon, etc.)
+  description    String? // Notas sobre el paquete (ej: "Sobre de color amarillo")
+  photo_url      String? // Evidencia visual de la llegada
+  locker_number  String? // Smart Locker Compartment ID
+  pickup_pin     String? // Temporary PIN code for the resident
+  status         String             @default("pending") // 'pending', 'delivered'
+  received_at    DateTime           @default(now())
+  delivered_at   DateTime?
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 }
 
 // --- 11. Maintenance Module ---
 
 model MaintenanceItem {
-  id              Int       @id @default(autoincrement())
-  name            String    // 'Elevator Tower A', 'Water Pump'
-  description     String?
-  category        String    // 'machinery', 'amenity', 'infrastructure'
-  serial_num      String?
-  brand           String?
-  model           String?
-  location        String?   // 'Basement', 'Roof'
-  purchase_date   DateTime?
-  warranty_until  DateTime?
-  qr_code         String?   @unique
-  status          String    @default("operational") // operational, under_maintenance, faulty, retired
-  
-  complex_id      Int
-  complex         ResidentialComplex @relation(fields: [complex_id], references: [id])
-  
-  tasks           MaintenanceTask[]
-  created_at      DateTime  @default(now())
-  updated_at      DateTime  @updatedAt
+  id             Int       @id @default(autoincrement())
+  name           String // 'Elevator Tower A', 'Water Pump'
+  description    String?
+  category       String // 'machinery', 'amenity', 'infrastructure'
+  serial_num     String?
+  brand          String?
+  model          String?
+  location       String? // 'Basement', 'Roof'
+  purchase_date  DateTime?
+  warranty_until DateTime?
+  qr_code        String?   @unique
+  status         String    @default("operational") // operational, under_maintenance, faulty, retired
+
+  complex_id Int
+  complex    ResidentialComplex @relation(fields: [complex_id], references: [id])
+
+  tasks      MaintenanceTask[]
+  created_at DateTime          @default(now())
+  updated_at DateTime          @updatedAt
 }
 
 model MaintenanceProvider {
-  id              Int       @id @default(autoincrement())
-  name            String
-  nit             String?   @unique
-  specialty       String?   // 'Plumbing', 'Electrical', 'Elevators'
-  contact_name    String?
-  email           String?
-  phone           String?
-  address         String?
-  
-  tasks           MaintenanceTask[]
-  created_at      DateTime  @default(now())
+  id           Int     @id @default(autoincrement())
+  name         String
+  nit          String? @unique
+  specialty    String? // 'Plumbing', 'Electrical', 'Elevators'
+  contact_name String?
+  email        String?
+  phone        String?
+  address      String?
+
+  tasks      MaintenanceTask[]
+  created_at DateTime          @default(now())
 }
 
 model MaintenanceTask {
-  id                Int       @id @default(autoincrement())
-  title             String
-  description       String?
-  type              String    @default("preventive") // preventive, corrective
-  status            String    @default("pending") // pending, in_progress, completed, cancelled
-  priority          String    @default("medium") // low, medium, high, urgent
-  
-  item_id           Int
-  item              MaintenanceItem @relation(fields: [item_id], references: [id])
-  
-  provider_id       Int?
-  provider          MaintenanceProvider? @relation(fields: [provider_id], references: [id])
-  
-  scheduled_date    DateTime
-  completed_date    DateTime?
-  
-  cost              Decimal?  @default(0)
-  expense_id        Int?      // Link to auto-generated expense
-  
-  photos            String?   // Store as JSON string or comma-separated URLs
-  signature_url     String?
-  technical_report  String?
-  
+  id          Int     @id @default(autoincrement())
+  title       String
+  description String?
+  type        String  @default("preventive") // preventive, corrective
+  status      String  @default("pending") // pending, in_progress, completed, cancelled
+  priority    String  @default("medium") // low, medium, high, urgent
+
+  item_id Int
+  item    MaintenanceItem @relation(fields: [item_id], references: [id])
+
+  provider_id Int?
+  provider    MaintenanceProvider? @relation(fields: [provider_id], references: [id])
+
+  scheduled_date DateTime
+  completed_date DateTime?
+
+  cost       Decimal? @default(0)
+  expense_id Int? // Link to auto-generated expense
+
+  photos           String? // Store as JSON string or comma-separated URLs
+  signature_url    String?
+  technical_report String?
+
   // Reported by resident link (optional)
-  reported_by_id    Int?
-  resident          Resident? @relation("ResidentReports", fields: [reported_by_id], references: [id])
-  
-  created_at        DateTime  @default(now())
-  updated_at        DateTime  @updatedAt
+  reported_by_id Int?
+  resident       Resident? @relation("ResidentReports", fields: [reported_by_id], references: [id])
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 }
 
 // --- 12. Document Digitalization ---
 
 model DocumentFolder {
-  id              Int              @id @default(autoincrement())
-  name            String
-  description     String?
-  parent_id       Int?
-  parent          DocumentFolder?  @relation("FolderHierarchy", fields: [parent_id], references: [id])
-  subfolders      DocumentFolder[] @relation("FolderHierarchy")
-  
-  complex_id      Int
-  complex         ResidentialComplex @relation(fields: [complex_id], references: [id])
-  
-  files           DocumentFile[]
-  created_at      DateTime         @default(now())
-  updated_at      DateTime         @updatedAt
+  id          Int              @id @default(autoincrement())
+  name        String
+  description String?
+  parent_id   Int?
+  parent      DocumentFolder?  @relation("FolderHierarchy", fields: [parent_id], references: [id])
+  subfolders  DocumentFolder[] @relation("FolderHierarchy")
+
+  complex_id Int
+  complex    ResidentialComplex @relation(fields: [complex_id], references: [id])
+
+  files      DocumentFile[]
+  created_at DateTime       @default(now())
+  updated_at DateTime       @updatedAt
 }
 
 model DocumentFile {
-  id              Int            @id @default(autoincrement())
-  name            String
-  file_url        String
-  file_type       String         // 'pdf', 'image', 'video', 'document'
-  file_size       Int?           // In bytes
-  
-  folder_id       Int
-  folder          DocumentFolder @relation(fields: [folder_id], references: [id])
-  
-  created_at      DateTime       @default(now())
-  updated_at      DateTime       @updatedAt
-}
+  id        Int    @id @default(autoincrement())
+  name      String
+  file_url  String
+  file_type String // 'pdf', 'image', 'video', 'document'
+  file_size Int? // In bytes
 
+  folder_id Int
+  folder    DocumentFolder @relation(fields: [folder_id], references: [id])
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+}
