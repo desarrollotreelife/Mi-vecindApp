@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Building2, Plus, Power, Search, Shield, Settings, Edit, Link } from 'lucide-react';
+import { Building2, Plus, Power, Search, Shield, Settings, Edit, Link, Check } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import api from '../services/api';
 import toast from 'react-hot-toast';
@@ -9,6 +9,7 @@ export const SuperAdminPage: React.FC = () => {
     const [complexes, setComplexes] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState('');
+    const [copiedSlug, setCopiedSlug] = useState<string | null>(null);
 
     // Create Complex Modal
     const [isFormOpen, setIsFormOpen] = useState(false);
@@ -170,6 +171,8 @@ export const SuperAdminPage: React.FC = () => {
         const url = `${window.location.origin}/ingreso/${slug}`;
         navigator.clipboard.writeText(url);
         toast.success('Enlace de acceso copiado al portapapeles');
+        setCopiedSlug(slug);
+        setTimeout(() => setCopiedSlug(null), 2000);
     };
 
     const filteredComplexes = complexes.filter(c =>
@@ -265,13 +268,22 @@ export const SuperAdminPage: React.FC = () => {
                                                         <Edit size={18} />
                                                     </button>
                                                     {complex.url_slug && (
-                                                        <button
-                                                            onClick={() => handleCopyLink(complex.url_slug)}
-                                                            className="p-2 rounded-lg hover:bg-teal-50 text-slate-400 hover:text-teal-600 transition-colors"
-                                                            title="Copiar Enlace de Acceso"
-                                                        >
-                                                            <Link size={18} />
-                                                        </button>
+                                                        <div className="relative flex flex-col items-center">
+                                                            <button
+                                                                onClick={() => handleCopyLink(complex.url_slug)}
+                                                                className={`p-2 rounded-lg transition-colors ${copiedSlug === complex.url_slug ? 'bg-teal-100 text-teal-600' : 'hover:bg-teal-50 text-slate-400 hover:text-teal-600'}`}
+                                                                title="Copiar Enlace de Acceso"
+                                                            >
+                                                                {copiedSlug === complex.url_slug ? <Check size={18} /> : <Link size={18} />}
+                                                            </button>
+                                                            {/* Tooltip for Copied */}
+                                                            {copiedSlug === complex.url_slug && (
+                                                                <div className="absolute -top-10 bg-slate-800 text-white text-[10px] py-1 px-2.5 rounded font-semibold whitespace-nowrap z-50 animate-bounce shadow-lg">
+                                                                    ¡Copiado!
+                                                                    <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 border-[5px] border-transparent border-t-slate-800"></div>
+                                                                </div>
+                                                            )}
+                                                        </div>
                                                     )}
                                                     <button
                                                         onClick={() => openModuleModal(complex)}
