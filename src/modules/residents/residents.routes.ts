@@ -1,5 +1,8 @@
 import { Router } from 'express';
-import { getResidents, createResident, updateResident, deleteResident, getProfile } from './residents.controller';
+import {
+    getResidents, createResident, updateResident, deleteResident, getProfile,
+    getRegistrationRequests, approveRegistrationRequest, rejectRegistrationRequest, deleteRegistrationRequest
+} from './residents.controller';
 import { getMyVCardToken, verifyVCardToken } from './vcard.controller';
 import { authenticate, authorize } from '../../core/auth.middleware';
 
@@ -18,5 +21,11 @@ router.get('/', authorize(['admin', 'guard']), getResidents);
 router.post('/', authorize(['admin']), createResident);
 router.put('/:id', authorize(['admin']), updateResident);
 router.delete('/:id', authorize(['admin']), deleteResident);
+
+// Registration Requests
+router.get('/requests', authorize(['admin']), getRegistrationRequests);
+router.post('/requests/:id/approve', authorize(['admin']), approveRegistrationRequest);
+router.post('/requests/:id/reject', authorize(['admin']), rejectRegistrationRequest);
+router.delete('/requests/:id', authorize(['admin']), deleteRegistrationRequest);
 
 export default router;

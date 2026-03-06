@@ -111,13 +111,14 @@ model Unit {
   complex_id  Int?
   complex     ResidentialComplex? @relation(fields: [complex_id], references: [id])
 
-  residents        Resident[]
-  pets             Pet[]
-  parkings         ParkingSlot[]
-  bills            Bill[]
-  votes            Vote[]
-  correspondence   Correspondence[]
-  emergency_alerts EmergencyAlert[]
+  residents               Resident[]
+  pets                    Pet[]
+  parkings                ParkingSlot[]
+  bills                   Bill[]
+  votes                   Vote[]
+  correspondence          Correspondence[]
+  emergency_alerts        EmergencyAlert[]
+  UserRegistrationRequest UserRegistrationRequest[]
 
   @@unique([complex_id, block, number])
 }
@@ -580,20 +581,21 @@ model ResidentialComplex {
 
   maintenance_items MaintenanceItem[]
 
-  users            User[]
-  units            Unit[]
-  amenities        Amenity[]
-  products         Product[]
-  access_points    AccessPoint[]
-  visitors         Visitor[]
-  announcements    Announcement[]
-  minutes          Minute[]
-  voting_sessions  VotingSession[]
-  expenses         Expense[]
-  parkings         ParkingSlot[]
-  document_folders DocumentFolder[]
-  correspondence   Correspondence[]
-  emergency_alerts EmergencyAlert[]
+  users                 User[]
+  registration_requests UserRegistrationRequest[]
+  units                 Unit[]
+  amenities             Amenity[]
+  products              Product[]
+  access_points         AccessPoint[]
+  visitors              Visitor[]
+  announcements         Announcement[]
+  minutes               Minute[]
+  voting_sessions       VotingSession[]
+  expenses              Expense[]
+  parkings              ParkingSlot[]
+  document_folders      DocumentFolder[]
+  correspondence        Correspondence[]
+  emergency_alerts      EmergencyAlert[]
 }
 
 // ... existing Maintenance and Document models ...
@@ -750,4 +752,29 @@ model DocumentFile {
 
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
+}
+
+// ======================================
+// REGISTRATION REQUESTS
+// ======================================
+
+model UserRegistrationRequest {
+  id         Int                @id @default(autoincrement())
+  complex_id Int
+  complex    ResidentialComplex @relation(fields: [complex_id], references: [id])
+
+  full_name      String
+  document_num   String
+  email          String
+  phone          String?
+  unit_id        Int?
+  unit           Unit?   @relation(fields: [unit_id], references: [id])
+  requested_role String
+  password_hash  String
+
+  status     String   @default("pending") // pending, approved, rejected
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@unique([complex_id, document_num, status], name: "unique_pending_request")
 }

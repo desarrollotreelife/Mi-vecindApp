@@ -161,4 +161,84 @@ export class AuthService {
 
         return complex;
     }
+
+    async getComplexUnitsBySlug(slug: string) {
+        const complex = await prisma.residentialComplex.findUnique({
+            where: { url_slug: slug },
+            select: { id: true, is_active: true }
+        });
+
+        if (!complex) throw new Error('Conjunto no encontrado');
+        if (!complex.is_active) throw new Error('El servicio para este conjunto ha sido temporalmente suspendido');
+
+        // Fetch towers and units for the dropdown
+        const units = await prisma.unit.findMany({
+            where: { complex_id: complex.id },
+            orderBy: [{ block: 'asc' }, { number: 'asc' }]
+        });
+
+        return units;
+    }
+
+    async requestAccess(data: {
+        slug: string,
+        full_name: string,
+        document_num: string,
+        email: string,
+        phone?: string,
+        unit_id: number,
+        requested_role: string,
+        password: string
+    }) {
+        const complex = await prisma.residentialComplex.findUnique({
+            where: { url_slug: data.slug }
+        });
+
+        if (!complex) throw new Error('Conjunto inválido');
+
+        // Verify if user already exists
+        const existingUser = await prisma.user.findFirst({
+            where: {
+                complex_id: complex.id,
+                OR: [
+                    { email: data.email },
+                    { document_num: data.document_num }
+                ]
+            }
+        });
+
+        if (existingUser) {
+            throw new Error('Ya existe un usuario oficial registrado con este correo o documento.');
+        }
+
+        // Verify if request already exists
+        const existingRequest = await prisma.userRegistrationRequest.findFirst({
+            where: {
+                complex_id: complex.id,
+                document_num: data.document_num,
+                status: 'pending'
+            }
+        });
+
+        if (existingRequest) {
+            throw new Error('Ya tienes una solicitud pendiente de aprobación para este conjunto.');
+        }
+
+        const password_hash = await bcrypt.hash(data.password, 10);
+
+        const request = await prisma.userRegistrationRequest.create({
+            data: {
+                complex_id: complex.id,
+                full_name: data.full_name,
+                document_num: data.document_num,
+                email: data.email,
+                phone: data.phone,
+                unit_id: data.unit_id,
+                requested_role: data.requested_role,
+                password_hash
+            }
+        });
+
+        return { message: 'Solicitud enviada exitosamente. Debes esperar la aprobación del administrador.' };
+    }
 }

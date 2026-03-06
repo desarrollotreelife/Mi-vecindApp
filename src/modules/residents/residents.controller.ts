@@ -71,3 +71,48 @@ export const deleteResident = async (req: Request, res: Response) => {
         res.status(400).json({ error: error.message });
     }
 };
+
+export const getRegistrationRequests = async (req: Request, res: Response) => {
+    try {
+        const user = (req as any).user;
+        const status = req.query.status as string | undefined;
+        if (!user || !user.complex_id) return res.status(403).json({ error: 'No autorizado' });
+        const result = await residentsService.getRegistrationRequests(user.complex_id, status);
+        res.json(result);
+    } catch (error: any) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+export const approveRegistrationRequest = async (req: Request, res: Response) => {
+    try {
+        const id = Number(req.params.id);
+        const user = (req as any).user;
+        const result = await residentsService.approveRegistrationRequest(id, user.complex_id);
+        res.json(result);
+    } catch (error: any) {
+        res.status(400).json({ error: error.message });
+    }
+};
+
+export const rejectRegistrationRequest = async (req: Request, res: Response) => {
+    try {
+        const id = Number(req.params.id);
+        const user = (req as any).user;
+        const result = await residentsService.rejectRegistrationRequest(id, user.complex_id);
+        res.json(result);
+    } catch (error: any) {
+        res.status(400).json({ error: error.message });
+    }
+};
+
+export const deleteRegistrationRequest = async (req: Request, res: Response) => {
+    try {
+        const id = Number(req.params.id);
+        const user = (req as any).user;
+        const result = await residentsService.deleteRegistrationRequest(id, user.complex_id);
+        res.json({ message: 'Eliminada', result });
+    } catch (error: any) {
+        res.status(400).json({ error: error.message });
+    }
+};
