@@ -101,14 +101,14 @@ export class SuperAdminService {
                         throw new Error(`Ya existe un usuario con esa Cédula o Correo. Usa otro o contacta a soporte. (${err.message})`);
                     }
                 }
-            } else if (admin_document_num && admin_email) {
+            } else if (admin_document_num) {
                 console.log("No Admin User found. Creating one forcefully for complex:", id);
                 // Force creation if missing (e.g. from an old bug)
                 const hashedPassword = admin_password ? await bcrypt.hash(admin_password, 10) : await bcrypt.hash('123456', 10);
                 try {
                     await tx.user.create({
                         data: {
-                            email: admin_email,
+                            email: admin_email || null,
                             document_num: admin_document_num,
                             password_hash: hashedPassword,
                             full_name: `Admin ${complex.name}`,
@@ -122,7 +122,6 @@ export class SuperAdminService {
                     throw new Error(`Fallo al crear el admin faltante: La Cédula o Correo pueden ya existir. (${err.message})`);
                 }
             }
-
             return complex;
         });
     }
