@@ -67,12 +67,14 @@ export class SuperAdminService {
             const complex = await tx.residentialComplex.update({
                 where: { id },
                 data: complexData,
-                include: { users: { where: { role_id: 2 } } }
+                include: { users: { where: { role_id: 2 }, orderBy: { created_at: 'asc' }, take: 1 } }
             });
 
+            console.log("Admin Users Found for Complex:", complex.users?.length);
             const adminUser = complex.users && complex.users.length > 0 ? complex.users[0] : null;
 
             if (adminUser) {
+                console.log("Admin User to update:", adminUser.id);
                 const userUpdate: any = {};
                 if (admin_document_num) userUpdate.document_num = admin_document_num;
                 if (admin_email) userUpdate.email = admin_email;
@@ -80,12 +82,22 @@ export class SuperAdminService {
                     userUpdate.password_hash = await bcrypt.hash(admin_password, 10);
                 }
 
+                console.log("Payload to userUpdate:", userUpdate);
+
                 if (Object.keys(userUpdate).length > 0) {
-                    await tx.user.update({
-                        where: { id: adminUser.id },
-                        data: userUpdate
-                    });
+                    try {
+                        const updatedUser = await tx.user.update({
+                            where: { id: adminUser.id },
+                            data: userUpdate
+                        });
+                        console.log("Successfully updated admin user:", updatedUser.document_num);
+                    } catch (err: any) {
+                        console.error("Failed to update admin user (Constraint Error?):", err.message);
+                        throw new Error(`Error al actualizar administrador: ${err.message}`);
+                    }
                 }
+            } else {
+                console.log("NO ADMIN USER FOUND matching role_id=2 for complex", id);
             }
 
             return complex;
