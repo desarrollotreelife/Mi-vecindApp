@@ -61,9 +61,34 @@ export class SuperAdminService {
     }
 
     async updateComplex(id: number, data: any) {
-        return (prisma as any).residentialComplex.update({
-            where: { id },
-            data
+        return prisma.$transaction(async (tx: any) => {
+            const { admin_document_num, admin_email, admin_password, id: _removeId, users: _removeUsers, ...complexData } = data;
+
+            const complex = await tx.residentialComplex.update({
+                where: { id },
+                data: complexData,
+                include: { users: { where: { role_id: 2 } } }
+            });
+
+            const adminUser = complex.users && complex.users.length > 0 ? complex.users[0] : null;
+
+            if (adminUser) {
+                const userUpdate: any = {};
+                if (admin_document_num) userUpdate.document_num = admin_document_num;
+                if (admin_email) userUpdate.email = admin_email;
+                if (admin_password && admin_password.trim() !== '') {
+                    userUpdate.password_hash = await bcrypt.hash(admin_password, 10);
+                }
+
+                if (Object.keys(userUpdate).length > 0) {
+                    await tx.user.update({
+                        where: { id: adminUser.id },
+                        data: userUpdate
+                    });
+                }
+            }
+
+            return complex;
         });
     }
 

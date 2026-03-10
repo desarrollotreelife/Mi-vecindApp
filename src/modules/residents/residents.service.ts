@@ -234,18 +234,24 @@ export class ResidentsService {
             }
 
             // 3. Update User
+            const userUpdateData: any = {
+                full_name: data.full_name,
+                email: data.email,
+                phone: data.phone,
+                document_num: data.document_num,
+                profile_photo: photoUrl,
+                // Update role if admin wants to change type to guard/admin
+                ...(data.user_type === 'admin' ? { role_id: 2 } :
+                    data.user_type === 'guard' ? { role_id: 4 } : { role_id: 3 })
+            };
+
+            if (data.password && data.password.trim() !== '') {
+                userUpdateData.password_hash = await bcrypt.hash(data.password, 10);
+            }
+
             await tx.user.update({
                 where: { id: resident.user_id },
-                data: {
-                    full_name: data.full_name,
-                    email: data.email,
-                    phone: data.phone,
-                    document_num: data.document_num,
-                    profile_photo: photoUrl,
-                    // Update role if admin wants to change type to guard/admin
-                    ...(data.user_type === 'admin' ? { role_id: 2 } :
-                        data.user_type === 'guard' ? { role_id: 4 } : { role_id: 3 })
-                }
+                data: userUpdateData
             });
 
             // 4. Update Resident

@@ -3,6 +3,7 @@ import { X, Save, User, Mail, Phone, Home, CreditCard, Camera, Trash2 } from 'lu
 import { getImageUrl } from '../../utils/imageHelper';
 import { Button } from '../ui/Button';
 import api from '../../services/api';
+import toast from 'react-hot-toast';
 import { FaceEnrollment } from './FaceEnrollment';
 
 interface ResidentFormProps {
@@ -121,15 +122,17 @@ export const ResidentForm: React.FC<ResidentFormProps> = ({ isOpen, onClose, onS
             // but we'll do it on capture to show immediate preview of optimized image.
             if (initialData?.id) {
                 await api.put(`/residents/${initialData.id}`, submitData);
+                toast.success('Residente actualizado correctamente');
             } else {
                 await api.post('/residents', submitData);
+                toast.success('Residente guardado exitosamente');
             }
             onSuccess();
             onClose();
         } catch (error: any) {
             console.error('Error saving resident:', error);
             const msg = error.response?.data?.error || error.message || 'Error desconocido';
-            alert(`Error al guardar residente: ${msg}`);
+            toast.error(`Error al guardar residente: ${msg}`);
         } finally {
             setIsLoading(false);
         }
