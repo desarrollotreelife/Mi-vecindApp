@@ -7,6 +7,11 @@ export class SuperAdminService {
             include: {
                 _count: {
                     select: { users: true, units: true }
+                },
+                users: {
+                    where: { role_id: 2 },
+                    take: 1,
+                    select: { id: true, email: true, document_num: true }
                 }
             },
             orderBy: { created_at: 'desc' }
