@@ -259,7 +259,7 @@ export const SuperAdminPage: React.FC = () => {
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4 text-right">
-                                                <div className="flex justify-end gap-2 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
+                                                <div className="flex justify-end gap-2">
                                                     <button
                                                         onClick={() => openEditModal(complex)}
                                                         className="p-2 rounded-lg hover:bg-orange-50 text-slate-400 hover:text-orange-600 transition-colors"
