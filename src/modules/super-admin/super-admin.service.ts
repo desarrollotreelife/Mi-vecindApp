@@ -46,7 +46,7 @@ export class SuperAdminService {
                 await tx.user.create({
                     data: {
                         email: data.admin_email,
-                        document_num: data.admin_email, // fallback
+                        document_num: data.admin_document_num || data.admin_email, // fixed fallback
                         password_hash: hashedPassword,
                         full_name: `Admin ${data.name}`,
                         role_id: 2, // 'admin' role
