@@ -81,8 +81,19 @@ export class SuperAdminService {
             if (adminUser) {
                 console.log("Admin User to update:", adminUser.id);
                 const userUpdate: any = {};
-                if (admin_document_num) userUpdate.document_num = admin_document_num;
-                if (admin_email) userUpdate.email = admin_email;
+                // If they provide a new document, update it. If they clear it, Prisma won't like it since document_num is unique and required normally, but let's assume it isn't cleared if empty.
+                if (admin_document_num && admin_document_num.trim() !== '') {
+                    userUpdate.document_num = admin_document_num.trim();
+                }
+                
+                // Email can be null in DB, so if empty string, set it to null
+                if (admin_email !== undefined) {
+                    if (admin_email.trim() === '') {
+                        userUpdate.email = null;
+                    } else {
+                        userUpdate.email = admin_email.trim();
+                    }
+                }
                 if (admin_password && admin_password.trim() !== '') {
                     userUpdate.password_hash = await bcrypt.hash(admin_password, 10);
                 }
@@ -139,12 +150,12 @@ export class SuperAdminService {
                     throw new Error(`La cédula o correo proporcionado ya está registrado en la plataforma. No se pudo crear el administrador faltante.`);
                 }
 
-                const hashedPassword = admin_password ? await bcrypt.hash(admin_password, 10) : await bcrypt.hash('123456', 10);
+                const hashedPassword = admin_password && admin_password.trim() !== '' ? await bcrypt.hash(admin_password, 10) : await bcrypt.hash('123456', 10);
                 try {
                     await tx.user.create({
                         data: {
-                            email: admin_email || null,
-                            document_num: admin_document_num,
+                            email: admin_email && admin_email.trim() !== '' ? admin_email.trim() : null,
+                            document_num: admin_document_num.trim(),
                             password_hash: hashedPassword,
                             full_name: `Admin ${complex.name}`,
                             role_id: 2,
