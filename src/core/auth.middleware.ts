@@ -8,6 +8,7 @@ export interface AuthRequest extends Request {
 export const authenticate = (req: AuthRequest, res: Response, next: NextFunction) => {
     const authHeader = req.headers.authorization;
     if (!authHeader) {
+        console.error('AUTH_MIDDLEWARE: No token provided');
         return res.status(401).json({ error: 'No token provided' });
     }
 
@@ -15,6 +16,7 @@ export const authenticate = (req: AuthRequest, res: Response, next: NextFunction
     const decoded = verifyToken(token);
 
     if (!decoded) {
+        console.error('AUTH_MIDDLEWARE: Invalid token ->', token);
         return res.status(401).json({ error: 'Invalid token' });
     }
 
@@ -26,6 +28,7 @@ export const authorize = (allowedRoles: string[]) => {
     return (req: any, res: Response, next: NextFunction) => {
         const user = req.user;
         if (!user) {
+            console.error('AUTH_MIDDLEWARE: Unauthorized (no user in req)');
             return res.status(401).json({ error: 'Unauthorized' });
         }
 

@@ -90,19 +90,25 @@ export class SuperAdminService {
                 console.log("Payload to userUpdate:", userUpdate);
 
                 if (Object.keys(userUpdate).length > 0) {
-                    // Check if another user has this document or email
-                    const existingConflict = await tx.user.findFirst({
-                        where: {
-                            OR: [
-                                ...(userUpdate.document_num ? [{ document_num: userUpdate.document_num }] : []),
-                                ...(userUpdate.email ? [{ email: userUpdate.email }] : [])
-                            ],
-                            id: { not: adminUser.id }
-                        }
-                    });
+                    const textOr = [];
+                    if (userUpdate.document_num && userUpdate.document_num.trim() !== '') {
+                        textOr.push({ document_num: userUpdate.document_num.trim() });
+                    }
+                    if (userUpdate.email && userUpdate.email.trim() !== '') {
+                        textOr.push({ email: userUpdate.email.trim() });
+                    }
 
-                    if (existingConflict) {
-                        throw new Error(`La cédula o correo proporcionado ya está en uso por otro usuario en la plataforma.`);
+                    if (textOr.length > 0) {
+                        const existingConflict = await tx.user.findFirst({
+                            where: {
+                                OR: textOr,
+                                id: { not: adminUser.id }
+                            }
+                        });
+
+                        if (existingConflict) {
+                            throw new Error(`La cédula o correo proporcionado ya está en uso por otro usuario en la plataforma.`);
+                        }
                     }
 
                     try {
