@@ -90,6 +90,21 @@ export class SuperAdminService {
                 console.log("Payload to userUpdate:", userUpdate);
 
                 if (Object.keys(userUpdate).length > 0) {
+                    // Check if another user has this document or email
+                    const existingConflict = await tx.user.findFirst({
+                        where: {
+                            OR: [
+                                ...(userUpdate.document_num ? [{ document_num: userUpdate.document_num }] : []),
+                                ...(userUpdate.email ? [{ email: userUpdate.email }] : [])
+                            ],
+                            id: { not: adminUser.id }
+                        }
+                    });
+
+                    if (existingConflict) {
+                        throw new Error(`La cédula o correo proporcionado ya está en uso por otro usuario en la plataforma.`);
+                    }
+
                     try {
                         const updatedUser = await tx.user.update({
                             where: { id: adminUser.id },
@@ -97,13 +112,27 @@ export class SuperAdminService {
                         });
                         console.log("Successfully updated admin user:", updatedUser.document_num);
                     } catch (err: any) {
-                        console.error("Failed to update admin user (Constraint Error?):", err.message);
-                        throw new Error(`Ya existe un usuario con esa Cédula o Correo. Usa otro o contacta a soporte. (${err.message})`);
+                        console.error("Failed to update admin user:", err.message);
+                        throw new Error(`Error intern al actualizar usuario administrador. (${err.message})`);
                     }
                 }
             } else if (admin_document_num) {
                 console.log("No Admin User found. Creating one forcefully for complex:", id);
-                // Force creation if missing (e.g. from an old bug)
+                
+                // Check conflicts for new user
+                const existingConflict = await tx.user.findFirst({
+                    where: {
+                        OR: [
+                            { document_num: admin_document_num },
+                            ...(admin_email ? [{ email: admin_email }] : [])
+                        ]
+                    }
+                });
+
+                if (existingConflict) {
+                    throw new Error(`La cédula o correo proporcionado ya está registrado en la plataforma. No se pudo crear el administrador faltante.`);
+                }
+
                 const hashedPassword = admin_password ? await bcrypt.hash(admin_password, 10) : await bcrypt.hash('123456', 10);
                 try {
                     await tx.user.create({
@@ -119,7 +148,7 @@ export class SuperAdminService {
                     });
                     console.log("Force created missing admin user.");
                 } catch (err: any) {
-                    throw new Error(`Fallo al crear el admin faltante: La Cédula o Correo pueden ya existir. (${err.message})`);
+                    throw new Error(`Fallo al crear el admin faltante. (${err.message})`);
                 }
             }
             return complex;

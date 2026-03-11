@@ -38,7 +38,7 @@ export const SuperAdminPage: React.FC = () => {
     });
 
     const openEditModal = (complex: any) => {
-        const adminUser = complex.users && complex.users.length > 0 ? complex.users[0] : null;
+        const adminUser = complex.users?.find((u: any) => u.role?.name === 'admin' || !u.role) || (complex.users && complex.users.length > 0 ? complex.users[0] : null);
 
         setEditComplex({
             id: complex.id,

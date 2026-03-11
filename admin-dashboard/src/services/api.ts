@@ -29,7 +29,7 @@ api.interceptors.response.use(
             sessionStorage.removeItem('token');
             sessionStorage.removeItem('user');
 
-            if (!window.location.pathname.includes('/login') && !window.location.pathname.includes('/ingreso/')) {
+            if (!window.location.pathname.startsWith('/login') && !window.location.pathname.startsWith('/ingreso')) {
                 window.location.href = '/login';
             }
         }
